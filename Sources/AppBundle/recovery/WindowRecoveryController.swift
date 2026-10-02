@@ -26,7 +26,7 @@ final class WindowRecoveryController {
         let owner = RecoveryJournalOwner(pid: application.processIdentifier, bundleId: application.bundleIdentifier,
                                          applicationLaunchDate: launchDate)
         let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(winMuxAppName, isDirectory: true)
+            .appendingPathComponent(winMuxAppSupportDirectoryName, isDirectory: true)
             .appendingPathComponent("recovery-journal.json")
         journal = WindowRecoveryJournal(url: url, owner: owner) { previous in
             guard let running = NSRunningApplication(processIdentifier: previous.pid) else { return false }

@@ -96,7 +96,7 @@ release:
 	$(MAKE) fork-build VERSION="$(VERSION)" BUILD_NUMBER="$(BUILD_NUMBER)"
 
 install:
-	@echo 'Install .release/WinMux-GF.app explicitly. This target never replaces WinMux.app.' >&2
+	@echo 'Install .release/WinMuxX.app explicitly. This target never replaces WinMux.app.' >&2
 	@exit 1
 installed: install
 

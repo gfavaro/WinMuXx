@@ -52,6 +52,6 @@ jobs:
         run: |
           set -euo pipefail
           version="$(tr -d '[:space:]' < VERSION)"
-          gh release create "$RELEASE_REF" ".release/WinMux-GF-$version-$BUILD_NUMBER.zip" \
-            --verify-tag --generate-notes --title "WinMux-GF $version" \
+          gh release create "$RELEASE_REF" ".release/WinMuxX-$version-$BUILD_NUMBER.zip" \
+            --verify-tag --generate-notes --title "WinMuxX $version" \
             --notes 'Personal fork build. Ad hoc signed, not notarized. Automatic updates are disabled.'
