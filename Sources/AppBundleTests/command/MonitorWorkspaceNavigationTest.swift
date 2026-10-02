@@ -79,6 +79,9 @@ final class MonitorWorkspaceNavigationTest: XCTestCase {
 
     func testForcedAssignmentBlocksSwapWithoutPartialChanges() async throws {
         config.workspaceToMonitorForceAssignment = ["1": [.main]]
+        // The initial history can point at the transient empty workspace created by test setup,
+        // which normal reconciliation prunes while handling the rejected activation.
+        winMuxWorkspaceState.monitorViewportsById[MonitorViewportId(displays[0])]?.previousWorkspaceId = spaces[2].id
         let before = winMuxWorkspaceState.monitorViewportsById
         let result = try await parseCommand("workspace --name 2").cmdOrDie.run(.defaultEnv, .emptyStdin)
         XCTAssertEqual(result.exitCode, 1)
