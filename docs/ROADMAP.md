@@ -20,9 +20,10 @@ Validation update: all 626 Swift tests passed and the Xcode Debug app built succ
 
 ## Ideas to revisit
 
+- [x] **Denser frost for the expanded sidebar:** the frosted effect now uses a more opaque AppKit surface and a stronger tint veil, retaining native blur, wallpaper-derived automatic tint, manual color choices, and the current compact rail. Reduce Transparency still overrides it with an opaque surface.
 - **Fixed workspace layouts:** reserve grid cells, preserve empty slots, define overflow expansion without rearranging existing placements. Acceptance: predictable terminal/editor/browser placement and reversible overflow. [Reference](https://github.com/mikker/Dinky/blob/main/docs/configuration.md#workspacenumber).
-- **Optional short animations:** retarget in-flight transitions, respect Reduce Motion, settle correctly after display disconnect or stalled animation clocks. Prioritize reliability before visual effects. [Reference](https://github.com/mikker/Dinky/blob/main/Sources/dinky/Animator.swift).
+- [x] **Optional short animations:** sidebar and tab-strip state transitions now disable animation when Reduce Motion is enabled. State-driven SwiftUI transitions retarget to the latest value; monitor reflow remains responsible for settling geometry after display changes. Runtime interruption checks remain useful follow-up validation. [Reference](https://github.com/mikker/Dinky/blob/main/Sources/dinky/Animator.swift).
 - **Focus follows mouse:** off by default, configurable dwell, ignore dragging/menus and protect focus after app/workspace changes. Acceptance: a stationary pointer never undoes Cmd-Tab or a workspace switch. [Reference](https://github.com/mikker/Dinky/blob/main/Sources/dinky/FocusFollowsMouse.swift).
-- **Mission Control / Exposé:** temporarily hide borders and suppress hover focus. Detect across supported macOS versions; do not copy Dinky's macOS-27-specific window heuristic blindly. [Reference](https://github.com/mikker/Dinky/blob/main/Sources/dinky/MissionControl.swift).
+- **Mission Control / Exposé:** defer suppression until it can be coordinated with WinMux workspace visibility and activation; the window-overlay heuristic conflicts with the current workspace model. [Reference](https://github.com/mikker/Dinky/blob/main/Sources/dinky/MissionControl.swift).
 
 Future items need a detailed implementation plan and tests before execution. The current delivery does not change the TOML format, create additional global hotkeys, alter macOS preferences or stop other apps.

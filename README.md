@@ -3,7 +3,7 @@
   <img src="resources/winmux-logo.svg" width="80" alt="WinMux logo">
 </p>
 
-# WinMux-GF
+# WinMuxX
 
 Personal fork by gfavaro, based on ZimengXiong/WinMux.
 See [fork maintenance, builds and releases](docs/FORK.md).
@@ -15,6 +15,28 @@ Upstream installation/release instructions below are project background only.
 https://github.com/user-attachments/assets/51983568-a168-494f-8ae3-5f50ca1efce1
 
 ## Highlights
+
+### Native sidebar appearance
+
+The personal fork defaults to `[workspace-sidebar] appearance = 'system'`: a native
+macOS translucent sidebar with adaptive text and controls. Reduce Transparency uses
+an opaque system background. Choose `appearance = 'custom'` in the config or
+Appearance settings to keep the previous dark Liquid Glass/solid style. Tabs and
+the switcher retain their existing Chrome settings independently.
+
+With system appearance, `background = 'sidebar'` keeps the default native material;
+`'menu-bar'` uses a native header material as a menu-bar-style approximation, and
+`'transparent'` removes the compact rail's background, adapts its contrast to the
+local wallpaper file, and adds translucent frosted glass when expanded. Choose this
+in Appearance → Sidebar background. Reduce Transparency overrides all three with
+an opaque background. Custom appearance ignores this setting.
+
+Choose an expanded glass color in Appearance → Expanded frosted tint, or set
+`frosted-tint = 'ice'`. Options are `automatic` (default), `white`, `black`, `cyan`,
+`pink`, `indigo`, `purple`, `ice` (cyan/pink gradient), and `aurora` (indigo/purple
+gradient). Automatic uses the average color behind each monitor's expanded sidebar,
+with a neutral fallback when the wallpaper cannot be read. These tint the translucent
+glass, not the wallpaper or compact rail.
 
 ### Menu-bar actions and diagnostics
 
@@ -44,13 +66,14 @@ The sidebar is a more interactively-performant and useful alternative to [Sketch
 You can drag windows in and out of the sidebar from and to the current workspace. You can rearrange windows across all spaces using the sidebar, including tab groups.
 
 By default the sidebar rests as a compact rail and expands when hovered. To hide the rail
-completely until the pointer reaches the left display edge, enable auto-hide. On macOS 26 and
-newer, native Liquid Glass is enabled by default. Choose an opaque solid color for greater
-contrast across the sidebar, tab groups, and switcher:
+completely until the pointer reaches the left display edge, enable auto-hide. The fork sidebar
+uses the system appearance by default; tabs and the switcher keep their Liquid Glass style
+on macOS 26 and newer. To apply an opaque custom color to all three:
 
 ```toml
 [workspace-sidebar]
     auto-hide = true
+    appearance = 'custom'
     chrome-style = 'solid'
     solid-chrome-color = 'lavender' # Choose any color shown in Appearance, including custom.
 ```
@@ -160,11 +183,13 @@ winmux workspace --name 9
 ```
 
 Workspace commands activate on the focused monitor unless `--monitor` specifies another display.
-Selecting a workspace already visible elsewhere swaps the two displays' active workspaces and focuses
-the destination display. Both assignments must respect `workspace-to-monitor-force-assignment`.
+Selecting a workspace already visible elsewhere focuses it on its existing display without
+moving either workspace or changing monitor history. Hidden workspace activation still respects
+`workspace-to-monitor-force-assignment`.
 `workspace next` and `workspace prev` skip workspaces visible on other displays; numbering stays
 project-wide. `workspace-back-and-forth` and `--auto-back-and-forth` use each display's own history.
-Clicking a sidebar activates on that sidebar's display using the same swap policy.
+Clicking a sidebar activates hidden workspaces on that sidebar's display; visible workspaces
+are focused where they already are, without an override confirmation.
 
 ### Multi-Monitors
 Monitors share the global project/workspace state. Each monitor can be treated as *independent* from each other. They each just use the sidebar to browse through projects and 'select' a workspace to view. 
