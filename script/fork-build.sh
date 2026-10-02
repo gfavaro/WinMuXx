@@ -21,9 +21,11 @@ source ./script/setup.sh
 swift build -c release --product winmux
 fork_bin="$(swift build -c release --show-bin-path | tail -n 1)"
 test -d "$fork_bin"
-ditto "$fork_bin/winmux" "$fork_app/Contents/MacOS/winmux-gf"
+# macOS normally uses case-insensitive volumes: winmux-gf would overwrite WinMux-GF.
+ditto "$fork_bin/winmux" "$fork_app/Contents/MacOS/winmux-gf-cli"
 codesign --force --deep --sign - "$fork_app"
 codesign --verify --deep --strict "$fork_app"
+"$fork_app/Contents/MacOS/WinMux-GF" --help | grep -q -- '--config-path'
 fork_plist="$fork_app/Contents/Info.plist"
 test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$fork_plist")" = com.gfavaro.winmux
 test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$fork_plist")" = "$fork_build_number"

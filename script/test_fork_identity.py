@@ -33,6 +33,12 @@ class ForkIdentityTests(unittest.TestCase):
         login = (ROOT / "Sources/AppBundle/config/startAtLogin.swift").read_text()
         self.assertNotIn("removeItem", login)
 
+    def test_cli_name_cannot_overwrite_app_on_case_insensitive_volumes(self):
+        build = (ROOT / "script/fork-build.sh").read_text()
+        self.assertIn('"$fork_app/Contents/MacOS/winmux-gf-cli"', build)
+        self.assertNotIn('"$fork_app/Contents/MacOS/winmux-gf"', build)
+        self.assertNotEqual("WinMux-GF".casefold(), "winmux-gf-cli".casefold())
+
 
 if __name__ == "__main__":
     unittest.main()

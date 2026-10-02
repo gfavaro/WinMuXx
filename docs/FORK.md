@@ -29,7 +29,7 @@ git switch -c contrib/my-fix upstream/main
 
 Release app: `WinMux-GF.app`, bundle ID `com.gfavaro.winmux`.
 Debug app: `WinMux-GF-Debug`, bundle ID `com.gfavaro.winmux.debug`.
-The CLI packaged in the release is `Contents/MacOS/winmux-gf`; it connects to the
+The CLI packaged in the release is `Contents/MacOS/winmux-gf-cli`; it connects to the
 fork socket, not the original app. Debug CLI builds connect to the debug fork.
 Application Support, recovery journals, login registration, and diagnostics are
 separate. No original launch agents are deleted.
