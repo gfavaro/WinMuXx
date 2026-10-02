@@ -1,7 +1,8 @@
 extension Workspace {
     @MainActor func normalizeContainers() {
         rootTilingContainer.unbindEmptyAndAutoFlatten() // Beware! rootTilingContainer may change after this line of code
-        if config.enableNormalizationOppositeOrientationForNestedContainers {
+        // Dwindle splits choose their axis from the available rectangle, not their parent's axis.
+        if config.enableNormalizationOppositeOrientationForNestedContainers && rootTilingContainer.layout != .dwindle {
             rootTilingContainer.normalizeOppositeOrientationForNestedContainers()
         }
     }
@@ -9,7 +10,9 @@ extension Workspace {
 
 extension TilingContainer {
     @MainActor fileprivate func unbindEmptyAndAutoFlatten() {
-        if let child = children.singleOrNil(), config.enableNormalizationFlattenContainers && (child is TilingContainer || !isRootContainer) {
+        // Keep the dwindle root: it carries the insertion policy even when its only child is a tiles split.
+        let preservesDwindleRoot = isRootContainer && layout == .dwindle
+        if let child = children.singleOrNil(), config.enableNormalizationFlattenContainers && !preservesDwindleRoot && (child is TilingContainer || !isRootContainer) {
             child.unbindFromParent()
             let mru = parent?.mostRecentChild
             let previousBinding = unbindFromParent()

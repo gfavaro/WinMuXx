@@ -185,6 +185,7 @@ private func toLayoutString(tc: TilingContainer) -> String {
     switch (tc.layout, tc.orientation) {
         case (.tiles, .h): return LayoutCmdArgs.LayoutDescription.h_tiles.rawValue
         case (.tiles, .v): return LayoutCmdArgs.LayoutDescription.v_tiles.rawValue
+        case (.dwindle, .h), (.dwindle, .v): return LayoutCmdArgs.LayoutDescription.dwindle.rawValue
         case (.tabGroup, .h): return LayoutCmdArgs.LayoutDescription.hTabGroup.rawValue
         case (.tabGroup, .v): return LayoutCmdArgs.LayoutDescription.vTabGroup.rawValue
     }

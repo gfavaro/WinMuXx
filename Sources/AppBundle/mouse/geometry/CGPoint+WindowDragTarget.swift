@@ -39,7 +39,7 @@ extension CGPoint {
     @MainActor
     private func findWindowDragTargetInContainer(_ container: TilingContainer, excluding excludedNode: TreeNode?) -> Window? {
         switch container.layout {
-            case .tiles:
+            case .tiles, .dwindle:
                 return findWindowDragTargetInTiles(container, excluding: excludedNode)
             case .tabGroup:
                 return findWindowDragTargetInTabGroup(container, excluding: excludedNode)

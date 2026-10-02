@@ -31,10 +31,33 @@ func bindingDataForNewTilingWindow(_ workspace: Workspace, window: Window?) -> B
     else {
         return BindingData(parent: workspace.rootTilingContainer, adaptiveWeight: WEIGHT_AUTO, index: INDEX_BIND_LAST)
     }
+    if workspace.rootTilingContainer.layout == .dwindle {
+        return bindingDataBySplittingDwindleAnchor(workspace: workspace, focusedWindow: mruWindow)
+    }
     if tilingParent.layout == .tabGroup {
         return bindingDataAfterTabGroup(workspace: workspace, tabGroup: tilingParent)
     }
     return BindingData(parent: tilingParent, adaptiveWeight: WEIGHT_AUTO, index: mruWindow.ownIndex.orDie() + 1)
+}
+
+@MainActor
+private func bindingDataBySplittingDwindleAnchor(workspace: Workspace, focusedWindow: Window) -> BindingData {
+    var anchor: TreeNode = focusedWindow
+    while let parent = anchor.parent as? TilingContainer, parent.layout == .tabGroup {
+        anchor = parent
+    }
+    let previousBinding = anchor.unbindFromParent()
+    let splitRect = anchor.lastAppliedLayoutVirtualRect ?? workspace.workspaceMonitor.visibleRectPaddedByOuterGaps
+    let orientation: Orientation = splitRect.width >= splitRect.height ? .h : .v
+    let split = TilingContainer(
+        parent: previousBinding.parent,
+        adaptiveWeight: previousBinding.adaptiveWeight,
+        orientation,
+        .tiles,
+        index: previousBinding.index,
+    )
+    anchor.bind(to: split, adaptiveWeight: 1, index: 0)
+    return BindingData(parent: split, adaptiveWeight: 1, index: 1)
 }
 
 @MainActor

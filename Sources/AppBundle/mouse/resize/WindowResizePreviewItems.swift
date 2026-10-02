@@ -103,7 +103,7 @@ private func windowResizePreviewContainerItems(
         )]
     }
     switch container.layout {
-        case .tiles:
+        case .tiles, .dwindle:
             return windowResizePreviewTileItems(
                 container: container,
                 point: point,

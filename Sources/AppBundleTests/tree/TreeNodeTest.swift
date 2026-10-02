@@ -24,6 +24,69 @@ final class TreeNodeTest: XCTestCase {
         XCTAssertNil(window.parent)
     }
 
+    func testDwindleSplitsFocusedWindowIntoResizableContainer() {
+        config.defaultRootContainerLayout = .dwindle
+        let workspace = Workspace.get(byName: "dwindle")
+        let first = TestWindow.new(id: 990, parent: workspace.rootTilingContainer)
+
+        let binding = bindingDataForNewTilingWindow(workspace, window: nil)
+        let split = binding.parent as? TilingContainer
+        let second = TestWindow.new(id: 991, parent: binding.parent, adaptiveWeight: binding.adaptiveWeight)
+
+        XCTAssertNotNil(split)
+        XCTAssertEqual(split?.layout, .tiles)
+        XCTAssertEqual(split?.children, [first, second])
+        XCTAssertEqual(split?.orientation, .h)
+    }
+
+    func testAutomaticDwindleSurvivesNormalizationAndWindowRemoval() async throws {
+        config.defaultRootContainerLayout = .dwindle
+        config.enableNormalizationFlattenContainers = true
+        config.enableNormalizationOppositeOrientationForNestedContainers = true
+        let workspace = Workspace.get(byName: "automatic-dwindle")
+        let root = workspace.rootTilingContainer
+        let first = TestWindow.new(id: 992, parent: root)
+        first.markAsMostRecentChild()
+        try await workspace.layoutWorkspace()
+
+        let secondBinding = bindingDataForNewRegularWindow(workspace, window: nil)
+        let second = TestWindow.new(id: 993, parent: secondBinding.parent, adaptiveWeight: secondBinding.adaptiveWeight)
+        second.markAsMostRecentChild()
+        workspace.normalizeContainers()
+        XCTAssertTrue(workspace.rootTilingContainer === root)
+        XCTAssertEqual(root.layout, .dwindle)
+        XCTAssertEqual((second.parent as? TilingContainer)?.orientation, .h)
+        try await workspace.layoutWorkspace()
+
+        let thirdBinding = bindingDataForNewRegularWindow(workspace, window: nil)
+        let third = TestWindow.new(id: 994, parent: thirdBinding.parent, adaptiveWeight: thirdBinding.adaptiveWeight)
+        third.markAsMostRecentChild()
+        workspace.normalizeContainers()
+        XCTAssertEqual((third.parent as? TilingContainer)?.orientation, .v)
+        try await workspace.layoutWorkspace()
+        let firstRect = first.lastAppliedLayoutPhysicalRect.orDie()
+        let secondRect = second.lastAppliedLayoutPhysicalRect.orDie()
+        let thirdRect = third.lastAppliedLayoutPhysicalRect.orDie()
+        XCTAssertLessThan(firstRect.minX, secondRect.minX)
+        XCTAssertEqual(secondRect.minX, thirdRect.minX)
+        XCTAssertLessThan(secondRect.minY, thirdRect.minY)
+
+        second.unbindFromParent()
+        third.unbindFromParent()
+        workspace.normalizeContainers()
+        XCTAssertTrue(workspace.rootTilingContainer === root)
+        XCTAssertEqual(root.allLeafWindowsRecursive, [first])
+        try await workspace.layoutWorkspace()
+        first.markAsMostRecentChild()
+
+        let reopenedBinding = bindingDataForNewRegularWindow(workspace, window: nil)
+        let reopened = TestWindow.new(id: 995, parent: reopenedBinding.parent, adaptiveWeight: reopenedBinding.adaptiveWeight)
+        workspace.normalizeContainers()
+        XCTAssertTrue(workspace.rootTilingContainer === root)
+        XCTAssertTrue(first.parent === reopened.parent)
+        XCTAssertEqual((reopened.parent as? TilingContainer)?.orientation, .h)
+    }
+
     func testNewRegularWindowsFloatWhenAutomaticTilingIsDisabled() {
         let workspace = Workspace.get(byName: name)
         let window = TestWindow.new(id: 502, parent: workspace.rootTilingContainer)

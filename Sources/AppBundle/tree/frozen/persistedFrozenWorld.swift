@@ -70,6 +70,8 @@ func restorePersistedFrozenWorldIfNeeded(newlyDetectedWindow: Window) async thro
     guard let pendingPersistedFrozenWorld else { return false }
     let didRestore = try await restoreFrozenWorldIfNeeded(pendingPersistedFrozenWorld, newlyDetectedWindow: newlyDetectedWindow)
     if didRestore {
+        // Old restart state may contain tiles roots from before dwindle was enabled.
+        if applyDwindleToExistingTiledWorkspaces() { syncClosedWindowsCacheToCurrentWorld() }
         didRestorePersistedFrozenWorldDuringCurrentSession = true
     }
     return didRestore

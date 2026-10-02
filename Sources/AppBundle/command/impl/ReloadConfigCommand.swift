@@ -33,9 +33,11 @@ struct ReloadConfigCommand: Command {
     switch readConfig(forceConfigUrl: forceConfigUrl) {
         case .success(let (parsedConfig, url)):
             if !args.dryRun {
+                let previousRootLayout = config.defaultRootContainerLayout
                 resetHotKeys()
                 config = parsedConfig
                 configUrl = url
+                applyUpdatedDefaultWindowLayout(previousLayout: previousRootLayout)
                 try await activateMode(activeMode)
                 syncStartAtLogin()
                 applyReloadedConfigurationToRunningApp()
@@ -55,6 +57,12 @@ struct ReloadConfigCommand: Command {
         syncConfigFileWatcher()
     }
     return result
+}
+
+@MainActor
+func applyUpdatedDefaultWindowLayout(previousLayout: Layout) {
+    guard isWinMuxRuntimeReady, previousLayout != config.defaultRootContainerLayout else { return }
+    if applyDwindleToExistingTiledWorkspaces() { syncClosedWindowsCacheToCurrentWorld() }
 }
 
 /// Apply a newly loaded config to all running surfaces. This is intentionally part of config
