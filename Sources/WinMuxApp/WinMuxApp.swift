@@ -16,17 +16,14 @@ struct WinMuxApp: App {
             AutomaticUpdates.start()
         #endif
         initAppBundle()
+        #if DEBUG
+        installNativeMenuBar()
+        #else
+        installNativeMenuBar(checkForUpdates: { AutomaticUpdates.checkForUpdates() })
+        #endif
     }
 
     var body: some Scene {
-        #if DEBUG
-        menuBar(viewModel: viewModel)
-        #else
-        menuBar(
-            viewModel: viewModel,
-            checkForUpdates: { AutomaticUpdates.checkForUpdates() },
-        )
-        #endif
         getShortcutSettingsWindow(model: shortcutSettingsModel)
             .onChange(of: shortcutSettingsModel.openRequestId) { _ in
                 openShortcutSettingsWindow(openWindow)

@@ -1,58 +1,6 @@
-    import Common
-    import Foundation
-    import SwiftUI
-    
-private let winmuxRepositoryURL = "https://github.com/zimengxiong/winmux"
-private let winmuxNewIssueURL = "https://github.com/zimengxiong/winmux/issues/new/choose"
-
-    @MainActor
-    public func menuBar(
-        viewModel: TrayMenuModel,
-        checkForUpdates: (() -> Void)? = nil,
-    ) -> some Scene { // todo should it be converted to "SwiftUI struct"?
-        MenuBarExtra {
-            let shortIdentification = "\(winMuxAppName) v\(winMuxAppVersion) \(gitShortHash)"
-            let identification      = "\(winMuxAppName) v\(winMuxAppVersion) \(gitHash)"
-        Text(shortIdentification)
-        Button("Copy to clipboard") { identification.copyToClipboard() }
-            .keyboardShortcut("C", modifiers: .command)
-        Divider()
-        Button(viewModel.isEnabled ? "Disable" : "Enable") {
-            Task {
-                try await runLightSession(.menuBarButton, .forceRun) { () throws in
-                    _ = try await EnableCommand(args: EnableCmdArgs(rawArgs: [], targetState: .toggle))
-                        .run(.defaultEnv, .emptyStdin)
-                }
-            }
-        }.keyboardShortcut("E", modifiers: .command)
-        OpenShortcutSettingsButton()
-        if let checkForUpdates {
-            Button("Check for Updates…") {
-                checkForUpdates()
-            }
-        }
-        Button("GitHub Repository") {
-            openURLString(winmuxRepositoryURL)
-        }
-        Button("File an issue...") {
-            openURLString(winmuxNewIssueURL)
-        }
-        Button("Quit \(winMuxAppName)") {
-            Task {
-                defer { terminateApp() }
-                try await terminationHandler.beforeTermination()
-            }
-        }.keyboardShortcut("Q", modifiers: .command)
-    } label: {
-        if viewModel.isEnabled {
-            MenuBarAppIcon().environmentObject(viewModel)
-        } else {
-            Image(systemName: "pause.circle.fill")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-        }
-    }
-}
+import Common
+import Foundation
+import SwiftUI
 
 @MainActor @ViewBuilder
 func openConfigButton(showShortcutGroup: Bool = false) -> some View {
@@ -88,12 +36,6 @@ func reloadConfigButton(showShortcutGroup: Bool = false) -> some View {
             button
         }
     }
-}
-
-@MainActor
-private func openURLString(_ urlString: String) {
-    guard let url = URL(string: urlString) else { return }
-    NSWorkspace.shared.open(url)
 }
 
 func shortcutGroup(label: some View, content: some View) -> some View {

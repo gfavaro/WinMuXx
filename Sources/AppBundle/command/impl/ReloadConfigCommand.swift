@@ -4,6 +4,7 @@ import Common
 /// Becomes true once the initial workspace model exists. Config parsing happens earlier during
 /// launch, when scheduling a live layout pass would race app initialization.
 @MainActor var isWinMuxRuntimeReady = false
+@MainActor var lastConfigReloadError: String? = nil
 
 struct ReloadConfigCommand: Command {
     let args: ReloadConfigCmdArgs
@@ -33,6 +34,7 @@ struct ReloadConfigCommand: Command {
     switch readConfig(forceConfigUrl: forceConfigUrl) {
         case .success(let (parsedConfig, url)):
             if !args.dryRun {
+                lastConfigReloadError = nil
                 let previousRootLayout = config.defaultRootContainerLayout
                 resetHotKeys()
                 config = parsedConfig
@@ -45,6 +47,7 @@ struct ReloadConfigCommand: Command {
             }
             result = true
         case .failure(let msg):
+            if !args.dryRun { lastConfigReloadError = msg }
             stdout.append(msg)
             if !args.noGui {
                 Task { @MainActor in

@@ -11,6 +11,20 @@ https://github.com/user-attachments/assets/51983568-a168-494f-8ae3-5f50ca1efce1
 
 ## Highlights
 
+### Menu-bar actions and diagnostics
+
+Click the menu-bar icon for window, layout, workspace, project and monitor
+commands. Shortcut labels use the effective bindings of the active mode; actions
+without a configured shortcut remain blank and clickable. Custom command chains,
+modifier taps and key sequences appear under Other Key Bindings when needed.
+The menu refreshes on every opening and does not create new global shortcuts.
+
+Choose Diagnostics to inspect the loaded config path and validity, permissions,
+monitors, potential window-manager conflicts and per-app accessibility latency.
+Refresh and Copy Diagnostics share the report used by `winmux doctor`. Checks
+do not modify macOS settings or stop other apps. Reports include local paths
+and app names; review them before sharing. No additional TOML options are required.
+
 ### Monitor-local workspace navigation
 
 `workspace` switches on the focused monitor. Selecting a workspace already

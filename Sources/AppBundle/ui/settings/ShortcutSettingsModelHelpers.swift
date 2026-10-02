@@ -17,6 +17,7 @@ func buildShortcutSections() -> [ShortcutSettingsModel.Section] {
                 shortcutAction(id: "focus-down", title: "Focus Down", command: "focus down"),
                 shortcutAction(id: "focus-up", title: "Focus Up", command: "focus up"),
                 shortcutAction(id: "focus-right", title: "Focus Right", command: "focus right"),
+                shortcutAction(id: "focus-history", title: "Back and Forth", command: "focus-back-and-forth"),
             ],
         ),
         .init(
@@ -41,6 +42,9 @@ func buildShortcutSections() -> [ShortcutSettingsModel.Section] {
                 shortcutAction(id: "split-down", title: "Split Down", command: "join-with down"),
                 shortcutAction(id: "split-up", title: "Split Up", command: "join-with up"),
                 shortcutAction(id: "split-right", title: "Split Right", command: "join-with right"),
+                shortcutAction(id: "split-horizontal", title: "New Horizontal Container", command: "split horizontal"),
+                shortcutAction(id: "split-vertical", title: "New Vertical Container", command: "split vertical"),
+                shortcutAction(id: "split-opposite", title: "New Opposite Container", command: "split opposite"),
             ],
         ),
         .init(
@@ -60,8 +64,48 @@ func buildShortcutSections() -> [ShortcutSettingsModel.Section] {
                     title: "Toggle Fullscreen",
                     command: "fullscreen"
                 ),
+                shortcutAction(id: "layout-dwindle", title: "Dwindle", command: "layout dwindle"),
+                shortcutAction(id: "layout-horizontal", title: "Horizontal Tiles", command: "layout h_tiles"),
+                shortcutAction(id: "layout-vertical", title: "Vertical Tiles", command: "layout v_tiles"),
+                shortcutAction(id: "layout-tabs", title: "Tab Group", command: "layout tab-group"),
+                shortcutAction(id: "layout-orientation", title: "Toggle Orientation", command: "layout horizontal vertical"),
+                shortcutAction(id: "balance", title: "Balance Sizes", command: "balance-sizes"),
+                shortcutAction(id: "flatten", title: "Flatten Workspace Tree", command: "flatten-workspace-tree"),
             ],
         ),
+        .init(id: "managed-stack", category: .managed, title: "Grouping", summary: nil,
+              actions: ["left", "down", "up", "right"].map {
+                  shortcutAction(id: "stack-\($0)", title: "Stack \($0.capitalized)", command: "stack-with \($0)")
+              } + [
+                  shortcutAction(id: "tab-next", title: "Next Tab", command: "focus tab-next"),
+                  shortcutAction(id: "tab-prev", title: "Previous Tab", command: "focus tab-prev"),
+              ]),
+        .init(id: "managed-swap", category: .managed, title: "Swap", summary: nil,
+              actions: ["left", "down", "up", "right"].map {
+                  shortcutAction(id: "swap-\($0)", title: "Swap \($0.capitalized)", command: "swap \($0)")
+              }),
+        .init(id: "managed-resize", category: .managed, title: "Resize", summary: nil,
+              actions: [
+                  shortcutAction(id: "width-grow", title: "Increase Width", command: "resize width +50"),
+                  shortcutAction(id: "width-shrink", title: "Decrease Width", command: "resize width -50"),
+                  shortcutAction(id: "height-grow", title: "Increase Height", command: "resize height +50"),
+                  shortcutAction(id: "height-shrink", title: "Decrease Height", command: "resize height -50"),
+              ]),
+        .init(id: "managed-window", category: .managed, title: "Window", summary: nil,
+              actions: [
+                  shortcutAction(id: "native-fullscreen", title: "Toggle macOS Fullscreen", command: "macos-native-fullscreen"),
+                  shortcutAction(id: "native-minimize", title: "Minimize", command: "macos-native-minimize"),
+                  shortcutAction(id: "close-window", title: "Close Window", command: "close"),
+                  shortcutAction(id: "close-others", title: "Close Other Windows…", command: "close-all-windows-but-current"),
+              ]),
+        .init(id: "utilities", category: .common, title: "Utilities", summary: nil,
+              actions: [
+                  shortcutAction(id: "sidebar", title: "Open Sidebar", command: "open-sidebar"),
+                  shortcutAction(id: "palette", title: "Window Switcher", command: "palette"),
+                  shortcutAction(id: "volume-up", title: "Increase Volume", command: "volume up"),
+                  shortcutAction(id: "volume-down", title: "Decrease Volume", command: "volume down"),
+                  shortcutAction(id: "volume-mute", title: "Toggle Mute", command: "volume mute-toggle"),
+              ]),
         .init(
             id: "workspaces",
             category: .common,
@@ -72,7 +116,7 @@ func buildShortcutSections() -> [ShortcutSettingsModel.Section] {
     ]
 }
 
-private func shortcutAction(
+func shortcutAction(
     id: String,
     title: String,
     subtitle: String? = nil,

@@ -1,5 +1,12 @@
 config-version = 2
 
+# The menu shows shortcuts from the active mode; unconfigured actions remain blank.
+# Diagnostics reports the loaded config path. Menu and diagnostics need no extra options.
+# Optional startup/focus callbacks; empty lists preserve the default behavior.
+after-startup-command = []
+on-focus-changed = []
+# after-login-command is deprecated; use start-at-login and after-startup-command.
+
 start-at-login = false
 auto-reload-config = true
 enable-normalization-flatten-containers = true
