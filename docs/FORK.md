@@ -7,7 +7,7 @@ changes. Minimum-size observations do not yet constrain the layout engine.
 
 ## Repository workflow
 
-- `origin`: https://github.com/gfavaro/WinMux.git
+- `origin`: https://github.com/gfavaro/WinMuXx.git
 - `upstream`: https://github.com/ZimengXiong/WinMux.git
 - `main`: stable personal integration branch; never rebase or force-push it.
 - `feat/*`: personal feature branches, based on `main`.
