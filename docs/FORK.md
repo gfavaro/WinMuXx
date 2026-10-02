@@ -1,4 +1,4 @@
-# Personal fork: WinMux-GF
+# Personal fork: WinMuXx
 
 This fork integrates the six upstream contributions and retains personal defaults
 (automatic dwindle and enabled built-in borders). Additional workspace persistence,
@@ -27,10 +27,12 @@ git switch -c contrib/my-fix upstream/main
 
 ## App isolation
 
-Release app: `WinMux-GF.app`, bundle ID `com.gfavaro.winmux`.
-Debug app: `WinMux-GF-Debug`, bundle ID `com.gfavaro.winmux.debug`.
-The CLI packaged in the release is `Contents/MacOS/winmux-gf-cli`; it connects to the
-fork socket, not the original app. Debug CLI builds connect to the debug fork.
+Release app: `WinMuXx.app`, bundle ID `com.gfavaro.winmux`.
+Debug app: `WinMuXx-Debug`, bundle ID `com.gfavaro.winmux.debug`.
+The CLI packaged in the release is `Contents/MacOS/winmuxx-cli`; the standalone CLI product
+is named `winmuxx` and is placed in the directory reported by
+`swift build -c release --show-bin-path`. Both connect to the fork socket, not the original
+app. Debug CLI builds connect to the debug fork.
 Application Support, recovery journals, login registration, and diagnostics are
 separate. No original launch agents are deleted.
 
@@ -51,9 +53,9 @@ make check
 make fork-build BUILD_NUMBER=1
 ```
 
-Outputs: `.release/WinMux-GF.app` and a version/build-number ZIP. The build is ad hoc
+Outputs: `.release/WinMuXx.app` and `.release/WinMuXx-<version>-<build>.zip`. The build is ad hoc
 signed, **not notarized**. New builds may require granting macOS permissions again.
-Quit the original window manager, then copy the app to `/Applications/WinMux-GF.app`
+Quit the original window manager, then copy the app to `/Applications/WinMuXx.app`
 and open it. The build command does not install, launch, or replace any app.
 The old upstream `make install` target is intentionally disabled.
 

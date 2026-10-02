@@ -6,7 +6,7 @@ final class ForkIdentityTest: XCTestCase {
     func testForkIdentityDoesNotUseUpstreamSocketOrState() {
         XCTAssertEqual(stableWinMuxAppId, "com.gfavaro.winmux")
         XCTAssertTrue(winMuxAppId.hasPrefix(stableWinMuxAppId))
-        XCTAssertTrue(winMuxAppName.hasPrefix("WinMux-GF"))
+        XCTAssertTrue(winMuxAppName.hasPrefix("WinMuXx"))
         XCTAssertTrue(socketPath.contains(winMuxAppId))
         XCTAssertFalse(socketPath.contains("com.zimengxiong"))
         XCTAssertEqual(forkRepositoryURL, "https://github.com/gfavaro/WinMuXx")

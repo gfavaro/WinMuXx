@@ -83,11 +83,11 @@ struct ServerArgs: Sendable {
 }
 
 private let serverHelp = """
-    USAGE: \(CommandLine.arguments.first ?? "WinMux.app/Contents/MacOS/WinMux") [<options>]
+    USAGE: \(CommandLine.arguments.first ?? "WinMuXx.app/Contents/MacOS/WinMuXx") [<options>]
 
     OPTIONS:
       -h, --help              Print help
-      -v, --version           Print WinMux.app version
+      -v, --version           Print WinMuXx.app version
       --config-path <path>    Config path. Takes priority over ${XDG_CONFIG_HOME}/winmux-gf/winmux.toml
                               (defaults to ~/.config/winmux-gf/winmux.toml).
       --read-only             Run without mutating macOS windows.

@@ -342,7 +342,7 @@ private struct WinMuxMarketingCanvas: View {
                     .shadow(color: .black.opacity(0.42), radius: 14, y: 8)
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("WinMux")
+                    Text("WinMuXx")
                         .font(.system(size: 19, weight: .bold, design: .rounded))
                     Text("A sidebar-first window manager for macOS")
                         .font(.system(size: 13, weight: .medium))
@@ -441,7 +441,7 @@ private struct MarketingMenuBar: View {
         HStack(spacing: 21) {
             Image(systemName: "apple.logo")
                 .font(.system(size: 15, weight: .semibold))
-            Text("WinMux").fontWeight(.semibold)
+            Text("WinMuXx").fontWeight(.semibold)
             Text("File")
             Text("Edit")
             Text("View")
@@ -788,7 +788,7 @@ private struct MarketingCodeContent: View {
     var body: some View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 12) {
-                Label("winmux", systemImage: "folder.fill")
+                Label("WinMuXx", systemImage: "folder.fill")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Color.white.opacity(0.72))
                 ForEach(["AppBundle", "ui", "sidebar", "tabs", "MarketingRenderer.swift"], id: \.self) { item in
@@ -891,7 +891,7 @@ private struct MarketingBrowserContent: View {
 private struct MarketingTerminalWindow: View {
     var body: some View {
         VStack(spacing: 0) {
-            MarketingPlainTitleBar(title: "Terminal — winmux")
+            MarketingPlainTitleBar(title: "Terminal — winmuxx")
             VStack(alignment: .leading, spacing: 8) {
                 Text("$ swift run winmux-marketing-renderer")
                     .foregroundStyle(Color.white.opacity(0.74))
@@ -1063,7 +1063,7 @@ private enum MarketingFixtures {
             ),
         ],
         projects: [
-            WorkspaceSidebarProjectViewModel(id: defaultProject, displayName: "WinMux", colorHex: "#7C6CF2"),
+            WorkspaceSidebarProjectViewModel(id: defaultProject, displayName: "WinMuXx", colorHex: "#7C6CF2"),
             WorkspaceSidebarProjectViewModel(id: "personal", displayName: "Personal", colorHex: "#58A6FF"),
         ],
         activeProjectId: defaultProject,
@@ -1104,7 +1104,7 @@ private enum MarketingFixtures {
         activeWindowId: 101,
         tabs: [
             tab(101, workspace: "code", app: "Xcode", bundle: "com.apple.dt.Xcode", title: "WorkspaceSidebarView.swift", active: true),
-            tab(102, workspace: "code", app: "Terminal", bundle: "com.apple.Terminal", title: "winmux — swift run"),
+            tab(102, workspace: "code", app: "Terminal", bundle: "com.apple.Terminal", title: "winmuxx — swift run"),
         ]
     )
 
@@ -1124,8 +1124,8 @@ private enum MarketingFixtures {
         activeWindowId: 301,
         tabs: [
             tab(301, workspace: "work", app: "Helium", bundle: "net.imput.helium", title: "alpaca engineering", active: true),
-            tab(302, workspace: "work", app: "Ghostty", bundle: "com.mitchellh.ghostty", title: "WinMux"),
-            tab(303, workspace: "work", app: "Finder", bundle: "com.apple.finder", title: "winmux"),
+            tab(302, workspace: "work", app: "Ghostty", bundle: "com.mitchellh.ghostty", title: "WinMuXx"),
+            tab(303, workspace: "work", app: "Finder", bundle: "com.apple.finder", title: "WinMuXx"),
         ]
     )
 

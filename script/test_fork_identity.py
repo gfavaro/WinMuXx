@@ -16,6 +16,9 @@ class ForkIdentityTests(unittest.TestCase):
 
     def test_project_generates_only_fork_bundle_identifiers(self):
         project = (ROOT / "project.yml").read_text()
+        package = (ROOT / "Package.swift").read_text()
+        self.assertIn("PRODUCT_NAME: WinMuXx\n", project)
+        self.assertIn('executable(name: "winmuxx", targets: ["Cli"])', package)
         self.assertIn("PRODUCT_BUNDLE_IDENTIFIER: com.gfavaro.winmux\n", project)
         self.assertIn("PRODUCT_BUNDLE_IDENTIFIER: com.gfavaro.winmux.debug\n", project)
         self.assertNotIn("com.zimengxiong", project)
@@ -35,9 +38,9 @@ class ForkIdentityTests(unittest.TestCase):
 
     def test_cli_name_cannot_overwrite_app_on_case_insensitive_volumes(self):
         build = (ROOT / "script/fork-build.sh").read_text()
-        self.assertIn('"$fork_app/Contents/MacOS/winmux-gf-cli"', build)
-        self.assertNotIn('"$fork_app/Contents/MacOS/winmux-gf"', build)
-        self.assertNotEqual("WinMux-GF".casefold(), "winmux-gf-cli".casefold())
+        self.assertIn('"$fork_app/Contents/MacOS/winmuxx-cli"', build)
+        self.assertIn('"$fork_bin/winmuxx"', build)
+        self.assertNotEqual("WinMuXx".casefold(), "winmuxx-cli".casefold())
 
 
 if __name__ == "__main__":

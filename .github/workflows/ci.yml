@@ -49,7 +49,7 @@ jobs:
         if: github.event_name == 'push' && github.repository == 'gfavaro/WinMuXx'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: WinMux-GF-${{ github.run_number }}
-          path: .release/WinMux-GF-*.zip
+          name: WinMuXx-${{ github.run_number }}
+          path: .release/WinMuXx-*.zip
           include-hidden-files: true
           if-no-files-found: error

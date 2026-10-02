@@ -1,14 +1,13 @@
 
 <p align="left">
-  <img src="resources/winmux-logo.svg" width="80" alt="WinMux logo">
+  <img src="resources/winmux-logo.svg" width="80" alt="WinMuXx logo">
 </p>
 
-# WinMux-GF
+# WinMuXx
 
-Personal fork by gfavaro, based on ZimengXiong/WinMux.
+Personal fork by gfavaro, based on [ZimengXiong/WinMux](https://github.com/ZimengXiong/WinMux).
 See [fork maintenance, builds and releases](docs/FORK.md).
-Automatic upstream updates are disabled. Build with `make fork-build`.
-Upstream installation/release instructions below are project background only.
+Automatic upstream updates are disabled. Build with `make fork-build` or download a fork release.
 
 <p align="left">A powerful sidebar-first window manager for macOS.</p>
 
@@ -18,19 +17,19 @@ https://github.com/user-attachments/assets/51983568-a168-494f-8ae3-5f50ca1efce1
 
 ### Menu-bar actions and diagnostics
 
-Click the WinMux menu-bar icon to browse window, layout, workspace, project and monitor actions.
+Click the WinMuXx menu-bar icon to browse window, layout, workspace, project and monitor actions.
 Shortcuts come from the effective configuration for the active mode, and the menu updates whenever
 it opens. Actions without shortcuts remain clickable. Custom command chains, modifier taps and
 key sequences are available under **Other Key Bindings** when not represented by a catalog action.
 
 Choose **Diagnostics…** to inspect the loaded config path, file validation, effective default layout,
 permissions, monitors, potentially conflicting window managers and per-app accessibility latency.
-The window offers **Refresh** and **Copy Diagnostics**; `winmux doctor` uses the same report generator.
+The window offers **Refresh** and **Copy Diagnostics**; `winmuxx doctor` uses the same report generator.
 Checks do not change macOS preferences or stop other apps. Review local paths and app names before
 sharing a report. Upcoming improvements are tracked in [the roadmap](docs/ROADMAP.md).
 
 After an interrupted session, the menu can offer **Recover N Windows from Previous Session…**.
-Recovery pauses tiling and restores the original positions and sizes recorded before WinMux moved
+Recovery pauses tiling and restores the original positions and sizes recorded before WinMuXx moved
 the windows. It validates the owning app's process and launch identity, skips disconnected displays
 and native fullscreen/minimized windows, and retains failed entries for another attempt. Choose
 **Enable** to resume tiling. The recovery journal is separate from the saved managed layout.
@@ -83,7 +82,7 @@ the month and day, and the weekday; for example, `show-date = false` with
 
 ### Window borders
 
-WinMux draws click-through borders around visible managed windows, with a different color for the
+WinMuXx draws click-through borders around visible managed windows, with a different color for the
 focused window. The settings follow [Dinky's `[borders]` configuration](https://github.com/mikker/Dinky/blob/main/docs/configuration.md#borders):
 
 ```toml
@@ -122,24 +121,24 @@ For borderless tiling, including no border beside the sidebar:
 ![](resources/screenshots/tab-groups.png)
 Tab groups allow you to have many windows occupy the same footprint, similar to Yabai stacks but with browser-like tab behavior. This is useful when you want to have multiple pieces of reference information next to an editor, multiple tabs in different browser profiles, or, when you simply want multiple fullscreen views without the additional friction and overhead of creating a new workspace.
 
-Unlike stack-only layouts, WinMux tab groups behave more intuitively like you would expect tabs to in browsers, and don't need a keyboard shortcut to activate. You can drag tabs from tab groups into another window's [intent zone](#managed-tiling-mode), or in between workspaces. You can also rearrange tab order within a tab group, and navigate through them with relative and absolute keybindings.
+Unlike stack-only layouts, WinMuXx tab groups behave more intuitively like you would expect tabs to in browsers, and don't need a keyboard shortcut to activate. You can drag tabs from tab groups into another window's [intent zone](#managed-tiling-mode), or in between workspaces. You can also rearrange tab order within a tab group, and navigate through them with relative and absolute keybindings.
 
 ### Philosophy
 
 #### Automatic tiling
 
 With `default-root-container-layout = 'dwindle'`, existing tiled windows also use dwindle at startup,
-including tiled roots restored from older saved state. Switching the default to dwindle while WinMux
+including tiled roots restored from older saved state. Switching the default to dwindle while WinMuXx
 is running updates existing tiled roots on config reload. Floating windows and tab groups are preserved;
 manual layout choices made afterward remain active during ordinary refreshes and unrelated config edits.
 
-WinMux tiles newly discovered windows by default. To keep their existing macOS size and position while still using WinMux's sidebar, workspaces, and manual layout commands, disable automatic tiling:
+WinMuXx tiles newly discovered windows by default. To keep their existing macOS size and position while still using WinMuXx's sidebar, workspaces, and manual layout commands, disable automatic tiling:
 
 ```toml
 automatically-tile-new-windows = false
 ```
 
-This applies to windows discovered when WinMux starts and windows opened later. You can still tile an individual floating window with `winmux layout tiling` or the configured `layout floating tiling` shortcut.
+This applies to windows discovered when WinMuXx starts and windows opened later. You can still tile an individual floating window with `winmuxx layout tiling` or the configured `layout floating tiling` shortcut.
 
 While dragging a window by its title bar, shake it horizontally to toggle between floating and tiling. The gesture requires several deliberate direction changes in quick succession, and does not activate during resize, sidebar, tab-strip, or tab-group drags. Disable it with:
 
@@ -155,8 +154,8 @@ select an internal workspace name directly.
 Workspace activation can target a monitor explicitly:
 
 ```shell
-winmux workspace 2 --monitor secondary
-winmux workspace --name 9
+winmuxx workspace 2 --monitor secondary
+winmuxx workspace --name 9
 ```
 
 Workspace commands activate on the focused monitor unless `--monitor` specifies another display.
@@ -172,7 +171,7 @@ Monitors share the global project/workspace state. Each monitor can be treated a
 Monitors can not be attached to the same workspace at the same time. They can be on the same project at the same time.
 
 #### App Launching
-WinMux supports single-modifer keybindings (e.g. triggering an action on press of `⌘`)
+WinMuXx supports single-modifer keybindings (e.g. triggering an action on press of `⌘`)
 
 I highly recommend that you configure the apps you use every day to be launch with Left/Right Option+Command, or similar shortcuts, otherwise it might be hard to launch common things into the current workspace (and instead, take you to the other workspace where the app is currently active). Here is some of the apps that I have keybinded:
 
@@ -215,30 +214,27 @@ end tell
 ```
 
 ## Installation
-Install WinMux with Homebrew:
+Download the latest WinMuXx ZIP from this fork's [Releases](https://github.com/gfavaro/WinMuXx/releases), or build it locally:
 
-```shell
-brew tap ZimengXiong/homebrew https://github.com/ZimengXiong/homebrew
-brew trust ZimengXiong/homebrew
-brew install --cask winmux
-xattr -cr /Applications/WinMux.app
+```sh
+make check
+make fork-build
+open .release/WinMuXx.app
 ```
 
-Or download the latest binary from releases and launch.
+Fork builds are ad-hoc signed and not notarized. macOS may require you to right-click the app and choose **Open** the first time you launch it. Automatic updates are disabled in this fork.
 
-Release builds are signed with the project's Apple Development certificate. They are not notarized, so macOS may require you to right-click the app and choose **Open** the first time you launch it.
-
-WinMux checks GitHub Releases for signed updates automatically. You can also select **Check for Updates…** from the menu bar.
+The standalone CLI executable is named `winmuxx`; SwiftPM reports its build directory with
+`swift build -c release --show-bin-path`. The app bundle includes it as
+`Contents/MacOS/winmuxx-cli` so it cannot collide with the app executable on case-insensitive disks.
 
 ## Migrating
 ### From AeroSpace
-If `~/.config/winmux/winmux.toml` already exists, WinMux uses it as-is.
+WinMuXx keeps its config in `${XDG_CONFIG_HOME:-~/.config}/winmux-gf/winmux.toml`.
 
-If you have an AeroSpace config but no WinMux config yet, WinMux creates one for you on first launch. It copies over your AeroSpace shortcuts/key mapping and fills in the rest with WinMux defaults, including the sidebar and window tabs.
+If you have an existing WinMux config at `~/.config/winmux/winmux.toml`, WinMuXx copies it into its own config directory on first launch and leaves the original untouched. If you have an AeroSpace config but no WinMux config yet, WinMuXx imports your AeroSpace shortcuts/key mapping and fills in the rest with its defaults, including the sidebar and window tabs.
 
-You do not need to edit anything to get started. After import, WinMux uses `~/.config/winmux/winmux.toml` and leaves your AeroSpace config alone.
-
-If neither exists, WinMux creates a new WinMux config with the bundled defaults.
+If neither source config exists, WinMuXx creates a new config with the bundled defaults.
 
 ## Credits
 [Aerospace](https://github.com/nikitabobko/AeroSpace)

@@ -15,17 +15,17 @@ xcodebuild -project WinMux.xcodeproj -scheme WinMux -configuration Release \
   CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= build > "$fork_stage/xcodebuild.log" 2>&1 || {
     tail -80 "$fork_stage/xcodebuild.log" >&2; exit 1;
   }
-fork_app="$PWD/.release/fork-derived/Build/Products/Release/WinMux-GF.app"
+fork_app="$PWD/.release/fork-derived/Build/Products/Release/WinMuXx.app"
 test -d "$fork_app"
 source ./script/setup.sh
-swift build -c release --product winmux
+swift build -c release --product winmuxx
 fork_bin="$(swift build -c release --show-bin-path | tail -n 1)"
 test -d "$fork_bin"
-# macOS normally uses case-insensitive volumes: winmux-gf would overwrite WinMux-GF.
-ditto "$fork_bin/winmux" "$fork_app/Contents/MacOS/winmux-gf-cli"
+# Keep the CLI name distinct from the app executable on case-insensitive macOS volumes.
+ditto "$fork_bin/winmuxx" "$fork_app/Contents/MacOS/winmuxx-cli"
 codesign --force --deep --sign - "$fork_app"
 codesign --verify --deep --strict "$fork_app"
-"$fork_app/Contents/MacOS/WinMux-GF" --help | grep -q -- '--config-path'
+"$fork_app/Contents/MacOS/WinMuXx" --help | grep -q -- '--config-path'
 fork_plist="$fork_app/Contents/Info.plist"
 test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$fork_plist")" = com.gfavaro.winmux
 test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$fork_plist")" = "$fork_build_number"
@@ -33,6 +33,6 @@ test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$fork_pli
 if /usr/libexec/PlistBuddy -c 'Print SUFeedURL' "$fork_plist" >/dev/null 2>&1; then
   echo 'Refusing to package an app with an update feed' >&2; exit 1
 fi
-ditto "$fork_app" .release/WinMux-GF.app
-ditto -c -k --sequesterRsrc --keepParent "$fork_app" ".release/WinMux-GF-$fork_version-$fork_build_number.zip"
-echo "Built .release/WinMux-GF.app (ad hoc signed, not notarized)."
+ditto "$fork_app" .release/WinMuXx.app
+ditto -c -k --sequesterRsrc --keepParent "$fork_app" ".release/WinMuXx-$fork_version-$fork_build_number.zip"
+echo "Built .release/WinMuXx.app (ad hoc signed, not notarized)."

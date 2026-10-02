@@ -1,4 +1,4 @@
-# WinMux roadmap
+# WinMuXx roadmap
 
 ## Current delivery
 
