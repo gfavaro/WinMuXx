@@ -85,3 +85,8 @@ Apple certificate-based signing/notarization is a separate future setup.
 Local tests/build results should be recorded separately from hosted CI. Publishing
 the branch does not prove the hosted pinned-toolchain build passed. Existing
 upstream PRs retain their independent defaults and do not receive fork branding.
+
+Bootstrap local verification: 631 Swift tests and 9 Python tests passed. The
+release app and its release CLI were built with local Apple Swift 6.4 / Xcode 27,
+not the pinned CI Swift toolchain. Ad hoc signatures and bundled fork metadata
+were verified. No app was installed or launched as part of bootstrap verification.
