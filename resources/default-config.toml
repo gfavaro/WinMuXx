@@ -9,6 +9,19 @@ tab-group-padding = 30
 window-tabs.enabled = true
 window-tabs.height = 36
 
+# Built-in, click-through borders. Opt in with enabled = true.
+# Stop JankyBorders and remove its startup command to avoid drawing two borders.
+borders.enabled = false
+# Points; fractional widths are supported. Zero hides borders.
+borders.width = 4
+# Colors accept #RRGGBB or #RRGGBBAA.
+borders.active-color = '#e1e3e4'
+borders.inactive-color = '#494d64'
+# Draw immediately 'below' or 'above' the managed window.
+borders.order = 'below'
+# Application bundle IDs, e.g. ['com.apple.finder'].
+borders.exclude-apps = []
+
 default-root-container-layout = 'tiles'
 default-root-container-orientation = 'auto'
 

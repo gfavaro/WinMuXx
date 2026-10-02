@@ -10,6 +10,18 @@
 https://github.com/user-attachments/assets/51983568-a168-494f-8ae3-5f50ca1efce1
 
 ## Highlights
+
+### Optional window borders
+
+Enable built-in, click-through borders with `borders.enabled = true`. The
+configuration follows [Dinky's border options](https://github.com/mikker/Dinky/blob/main/docs/configuration.md#borders):
+width in points, active/inactive colors (`#RRGGBB` or `#RRGGBBAA`), order
+(`below` or `above`) and excluded application bundle IDs. Borders track visible
+managed windows and focus, and hide with their windows/fullscreen chrome.
+
+Borders are disabled by default. Settings apply on config reload. If you use
+JankyBorders, remove its startup command and stop the external `borders` process
+before enabling WinMux borders; WinMux does not stop other processes for you.
 ### Projects
 Projects are collection of workspaces. Think of it like a parent/child hiearchy, you can switch between projects. Each project has it's own set of workspaces.
 
