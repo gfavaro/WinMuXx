@@ -1,149 +1,57 @@
-name: Release
+name: Personal release
 
 on:
   push:
-    branches: [main]
+    tags: ['gf-v*']
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: release
+  group: fork-release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   release:
-    name: Build and publish
+    if: github.repository == 'gfavaro/WinMux'
     runs-on: macos-26
     timeout-minutes: 60
-    environment: release
+    permissions:
+      contents: write
     steps:
-      - name: Check out the repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-
-      - name: Validate the version
-        id: version
-        shell: bash
+          persist-credentials: false
+      - name: Validate tag and integration ancestry
+        env:
+          RELEASE_REF: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           version="$(tr -d '[:space:]' < VERSION)"
-          if [[ ! "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
-            echo "VERSION must contain one stable semantic version, such as 1.2.3." >&2
-            exit 1
-          fi
-
-          if git rev-parse --verify --quiet "refs/tags/v$version"; then
-            echo "Version $version is already released; there is nothing to do."
-            echo "publish=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          latest_tag="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname | head -1)"
-          if [[ -n "$latest_tag" ]]; then
-            IFS=. read -r old_major old_minor old_patch <<< "${latest_tag#v}"
-            IFS=. read -r new_major new_minor new_patch <<< "$version"
-            if (( new_major < old_major ||
-                  (new_major == old_major && new_minor < old_minor) ||
-                  (new_major == old_major && new_minor == old_minor && new_patch <= old_patch) )); then
-              echo "VERSION $version must be newer than ${latest_tag#v}." >&2
-              exit 1
-            fi
-          fi
-
-          echo "publish=true" >> "$GITHUB_OUTPUT"
-          echo "value=$version" >> "$GITHUB_OUTPUT"
-          echo "tag=v$version" >> "$GITHUB_OUTPUT"
-
-      - name: Install the pinned Swift toolchain
-        if: steps.version.outputs.publish == 'true'
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          test "$RELEASE_REF" = "gf-v$version"
+          git merge-base --is-ancestor HEAD origin/main
+      - name: Install pinned Swift
         run: |
           brew install swiftly
           swiftly init --skip-install --assume-yes --verbose
           swiftly install
-
-      - name: Build and test
-        if: steps.version.outputs.publish == 'true'
+      - name: Test
         run: make check
-
-      - name: Import the Apple Development certificate
-        if: steps.version.outputs.publish == 'true'
+      - name: Build isolated personal app
         env:
-          CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
-          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          certificate_path="$RUNNER_TEMP/developer-id.p12"
-          keychain_path="$RUNNER_TEMP/release-signing.keychain-db"
-          keychain_password="$(uuidgen)"
-
-          printf '%s' "$CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
-          security create-keychain -p "$keychain_password" "$keychain_path"
-          security set-keychain-settings -lut 21600 "$keychain_path"
-          security unlock-keychain -p "$keychain_password" "$keychain_path"
-          security import "$certificate_path" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$keychain_path"
-          security set-key-partition-list -S apple-tool:,apple: -k "$keychain_password" "$keychain_path"
-          security list-keychains -d user -s "$keychain_path"
-          echo "RELEASE_KEYCHAIN=$keychain_path" >> "$GITHUB_ENV"
-
-      - name: Build, sign, and generate the appcast
-        if: steps.version.outputs.publish == 'true'
-        env:
-          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-        run: |
-          make release \
-            VERSION="${{ steps.version.outputs.value }}" \
-            RELEASE_TAG="${{ steps.version.outputs.tag }}"
-
-      - name: Publish the GitHub release
-        if: steps.version.outputs.publish == 'true'
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: make fork-build BUILD_NUMBER="$BUILD_NUMBER"
+      - name: Publish personal release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.version.outputs.value }}
-          TAG: ${{ steps.version.outputs.tag }}
-        shell: bash
+          GH_REPO: ${{ github.repository }}
+          RELEASE_REF: ${{ github.ref_name }}
+          BUILD_NUMBER: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          gh release create "$TAG" \
-            ".release/WinMux-$VERSION.zip" \
-            .release/appcast.xml \
-            --draft \
-            --generate-notes \
-            --target "$GITHUB_SHA" \
-            --title "WinMux $VERSION"
-          gh release edit "$TAG" --draft=false
-
-      - name: Check out the Homebrew tap
-        if: steps.version.outputs.publish == 'true'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: ZimengXiong/homebrew
-          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          path: homebrew
-
-      - name: Update the Homebrew cask
-        if: steps.version.outputs.publish == 'true'
-        env:
-          VERSION: ${{ steps.version.outputs.value }}
-        run: |
-          set -euo pipefail
-          asset="WinMux-$VERSION.zip"
-          sha256="$(shasum -a 256 ".release/$asset" | awk '{print $1}')"
-
-          sed -i '' -E "s/version \"[^\"]+\"/version \"$VERSION\"/" homebrew/Casks/winmux.rb
-          sed -i '' -E "s/sha256 \"[^\"]+\"/sha256 \"$sha256\"/" homebrew/Casks/winmux.rb
-          git -C homebrew diff --check
-          git -C homebrew add Casks/winmux.rb
-          git -C homebrew config user.name "github-actions[bot]"
-          git -C homebrew config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git -C homebrew commit -m "winmux $VERSION"
-          git -C homebrew push
-
-      - name: Remove signing credentials
-        if: always() && steps.version.outputs.publish == 'true'
-        run: |
-          if [[ -n "${RELEASE_KEYCHAIN:-}" ]]; then
-            security delete-keychain "$RELEASE_KEYCHAIN"
-          fi
+          version="$(tr -d '[:space:]' < VERSION)"
+          gh release create "$RELEASE_REF" ".release/WinMux-GF-$version-$BUILD_NUMBER.zip" \
+            --verify-tag --generate-notes --title "WinMux-GF $version" \
+            --notes 'Personal fork build. Ad hoc signed, not notarized. Automatic updates are disabled.'

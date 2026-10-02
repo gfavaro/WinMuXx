@@ -2,11 +2,12 @@ VERSION ?= $(shell tr -d '[:space:]' < VERSION)
 CODESIGN_IDENTITY ?= Apple Development
 EXPECTED_CODESIGN_AUTHORITY_PREFIX ?= Authority=Apple Development:
 CODE_SIGN_STYLE ?= Manual
-DEVELOPMENT_TEAM ?= W9C2P3N7Q2
+DEVELOPMENT_TEAM ?=
+BUILD_NUMBER ?= 1
 RELEASE_DIR ?= .release
 RELEASE_TAG ?= v$(VERSION)
 APP_INSTALL_DIR ?= /Applications
-SPARKLE_PUBLIC_KEY ?= kcc3956V3+Yo8GtwFJ8Odb9sphIr09/9dsuoYBNtxf0=
+SPARKLE_PUBLIC_KEY ?=
 ARGS ?=
 
 .PHONY: generate xcodeproj build build-clean run run-clean cli check release install installed clean
@@ -23,6 +24,7 @@ xcodeproj:
 	/bin/bash -lc 'cd "$(CURDIR)" && \
 	source ./script/setup.sh && \
 	export XCODEGEN_WINMUX_VERSION="$(VERSION)" && \
+	export XCODEGEN_WINMUX_BUILD_NUMBER="$(BUILD_NUMBER)" && \
 	export XCODEGEN_WINMUX_CODE_SIGN_IDENTITY="$(CODESIGN_IDENTITY)" && \
 	export XCODEGEN_WINMUX_DEVELOPMENT_TEAM="$(DEVELOPMENT_TEAM)" && \
 	export XCODEGEN_WINMUX_SPARKLE_PUBLIC_KEY="$(SPARKLE_PUBLIC_KEY)" && \
@@ -86,74 +88,21 @@ check:
 	source ./script/setup.sh && \
 	swift test && \
 	python3 -m unittest script/test_validate_appcast.py && \
+	python3 -m unittest script/test_fork_identity.py && \
 	swift package resolve && \
 	git diff --exit-code -- Package.resolved'
 
 release:
-	$(MAKE) xcodeproj VERSION="$(VERSION)" CODESIGN_IDENTITY="$(CODESIGN_IDENTITY)"
-	/bin/bash -lc 'cd "$(CURDIR)" && \
-	set -euo pipefail && \
-	source ./script/setup.sh && \
-	test -n "$(VERSION)" && \
-	app_name="WinMux"; \
-	release_dir="$(RELEASE_DIR)"; \
-	archive_path="$$release_dir/$$app_name-$(VERSION).xcarchive"; \
-	derived_data_path="$$release_dir/$$app_name-$(VERSION).deriveddata"; \
-	app_path="$$archive_path/Products/Applications/$$app_name.app"; \
-	zip_path="$$release_dir/$$app_name-$(VERSION).zip"; \
-	appcast_path="$$release_dir/appcast.xml"; \
-	log_path="$$release_dir/$$app_name-$(VERSION)-xcodebuild.log"; \
-	rm -rf "$$archive_path" "$$zip_path" "$$appcast_path" "$$derived_data_path"; \
-	mkdir -p "$$release_dir"; \
-	xcodebuild-pretty "$$log_path" \
-	    -project WinMux.xcodeproj \
-	    -scheme WinMux \
-	    -configuration Release \
-	    -archivePath "$$archive_path" \
-	    -derivedDataPath "$$derived_data_path" \
-	    CODE_SIGN_IDENTITY="$(CODESIGN_IDENTITY)" \
-	    DEVELOPMENT_TEAM="$(DEVELOPMENT_TEAM)" \
-	    CODE_SIGN_STYLE="$(CODE_SIGN_STYLE)" \
-	    archive; \
-	test -d "$$app_path"; \
-	test "$$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$$app_path/Contents/Info.plist")" = "$(VERSION)"; \
-	test "$$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$$app_path/Contents/Info.plist")" = "$(VERSION)"; \
-	codesign --verify --deep --strict --verbose=2 "$$app_path"; \
-	codesign -dv --verbose=4 "$$app_path" 2>&1 | grep -F "$(EXPECTED_CODESIGN_AUTHORITY_PREFIX)" >/dev/null; \
-	codesign -dv --verbose=4 "$$app_path" 2>&1 | grep -E "^CodeDirectory .*flags=.*runtime" >/dev/null; \
-	ditto -c -k --sequesterRsrc --keepParent "$$app_path" "$$zip_path"; \
-	sparkle_appcast="$$(find "$$derived_data_path/SourcePackages/artifacts" -type f -name generate_appcast -print -quit)"; \
-	test -n "$$sparkle_appcast"; \
-	appcast_stage="$$(mktemp -d "$$release_dir/appcast-stage.XXXXXX")"; \
-	trap "rm -rf \"$$appcast_stage\"" EXIT; \
-	cp "$$zip_path" "$$appcast_stage/"; \
-	if [ -n "$${SPARKLE_PRIVATE_KEY:-}" ]; then \
-	    printf "%s" "$$SPARKLE_PRIVATE_KEY" | "$$sparkle_appcast" --ed-key-file - --download-url-prefix "https://github.com/ZimengXiong/winmux/releases/download/$(RELEASE_TAG)/" "$$appcast_stage"; \
-	else \
-	    "$$sparkle_appcast" --download-url-prefix "https://github.com/ZimengXiong/winmux/releases/download/$(RELEASE_TAG)/" "$$appcast_stage"; \
-	fi; \
-	python3 script/validate-appcast.py "$$appcast_stage/appcast.xml" "$(VERSION)" "https://github.com/ZimengXiong/winmux/releases/download/$(RELEASE_TAG)/$$app_name-$(VERSION).zip"; \
-	cp "$$appcast_stage/appcast.xml" "$$appcast_path"; \
-	test -f "$$appcast_path"'
+	$(MAKE) fork-build VERSION="$(VERSION)" BUILD_NUMBER="$(BUILD_NUMBER)"
 
 install:
-	$(MAKE) release VERSION="$(VERSION)" CODE_SIGN_STYLE=Automatic DEVELOPMENT_TEAM="$(DEVELOPMENT_TEAM)"
-	/bin/bash -lc 'cd "$(CURDIR)" && \
-	set -euo pipefail && \
-	app_name="WinMux"; \
-	release_dir="$(RELEASE_DIR)"; \
-	app_path="$$release_dir/$$app_name-$(VERSION).xcarchive/Products/Applications/$$app_name.app"; \
-	install_dir="$(APP_INSTALL_DIR)"; \
-	install_path="$$install_dir/$$app_name.app"; \
-	test -d "$$app_path"; \
-	mkdir -p "$$install_dir"; \
-	osascript -e "tell application \"$$app_name\" to quit" >/dev/null 2>&1 || true; \
-	rm -rf "$$install_path"; \
-	ditto "$$app_path" "$$install_path"; \
-	xattr -dr com.apple.quarantine "$$install_path" >/dev/null 2>&1 || true; \
-	open "$$install_path"'
-
+	@echo 'Install .release/WinMux-GF.app explicitly. This target never replaces WinMux.app.' >&2
+	@exit 1
 installed: install
+
+.PHONY: fork-build
+fork-build:
+	VERSION="$(VERSION)" BUILD_NUMBER="$(BUILD_NUMBER)" bash script/fork-build.sh
 
 clean:
 	/bin/bash -lc 'cd "$(CURDIR)" && rm -rf .build .debug .deps .derived "$(RELEASE_DIR)" WinMux.xcodeproj'

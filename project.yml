@@ -22,9 +22,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSUIElement: true
-        SUEnableAutomaticChecks: true
-        SUFeedURL: https://github.com/ZimengXiong/winmux/releases/latest/download/appcast.xml
-        SUPublicEDKey: $(SPARKLE_PUBLIC_KEY)
+        SUEnableAutomaticChecks: false
     sources:
       - "Sources/WinMuxApp"
       - path: "resources"
@@ -41,18 +39,18 @@ targets:
       base:
         SWIFT_VERSION: 6.2 # Swift Language Version
         MARKETING_VERSION: ${XCODEGEN_WINMUX_VERSION}
-        CURRENT_PROJECT_VERSION: ${XCODEGEN_WINMUX_VERSION}
+        CURRENT_PROJECT_VERSION: ${XCODEGEN_WINMUX_BUILD_NUMBER}
         SPARKLE_PUBLIC_KEY: ${XCODEGEN_WINMUX_SPARKLE_PUBLIC_KEY}
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: ${XCODEGEN_WINMUX_CODE_SIGN_IDENTITY}
         DEVELOPMENT_TEAM: ${XCODEGEN_WINMUX_DEVELOPMENT_TEAM}
       configs:
         Debug:
-          PRODUCT_NAME: WinMux-Debug
-          PRODUCT_BUNDLE_IDENTIFIER: com.zimengxiong.winmux.debug
+          PRODUCT_NAME: WinMux-GF-Debug
+          PRODUCT_BUNDLE_IDENTIFIER: com.gfavaro.winmux.debug
         Release:
-          PRODUCT_NAME: WinMux
-          PRODUCT_BUNDLE_IDENTIFIER: com.zimengxiong.winmux
+          PRODUCT_NAME: WinMux-GF
+          PRODUCT_BUNDLE_IDENTIFIER: com.gfavaro.winmux
           ENABLE_HARDENED_RUNTIME: YES
           SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
           GCC_TREAT_WARNINGS_AS_ERRORS: YES

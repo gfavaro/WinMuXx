@@ -3,7 +3,12 @@
   <img src="resources/winmux-logo.svg" width="80" alt="WinMux logo">
 </p>
 
-# WinMux
+# WinMux-GF
+
+Personal fork by gfavaro, based on ZimengXiong/WinMux.
+See [fork maintenance, builds and releases](docs/FORK.md).
+Automatic upstream updates are disabled. Build with `make fork-build`.
+Upstream installation/release instructions below are project background only.
 
 <p align="left">A powerful sidebar-first window manager for macOS.</p>
 

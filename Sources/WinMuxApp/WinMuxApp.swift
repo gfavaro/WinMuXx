@@ -1,5 +1,4 @@
 import AppBundle
-import SparkleSupport
 import SwiftUI
 
 // This file is shared between SPM and xcode project
@@ -12,15 +11,9 @@ struct WinMuxApp: App {
     @Environment(\.openWindow) var openWindow: OpenWindowAction
 
     init() {
-        #if !DEBUG
-            AutomaticUpdates.start()
-        #endif
         initAppBundle()
-        #if DEBUG
+        // Fork builds intentionally have no updater until a separately signed feed exists.
         installNativeMenuBar()
-        #else
-        installNativeMenuBar(checkForUpdates: { AutomaticUpdates.checkForUpdates() })
-        #endif
     }
 
     var body: some Scene {

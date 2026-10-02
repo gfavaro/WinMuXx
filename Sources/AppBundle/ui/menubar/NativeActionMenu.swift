@@ -258,8 +258,8 @@ final class NativeActionMenu: NSObject, NSMenuDelegate {
         }
     }
     @objc private func checkUpdates() { checkForUpdates?() }
-    @objc private func openRepository() { NSWorkspace.shared.open(URL(string: "https://github.com/zimengxiong/winmux")!) }
-    @objc private func openIssue() { NSWorkspace.shared.open(URL(string: "https://github.com/zimengxiong/winmux/issues/new/choose")!) }
+    @objc private func openRepository() { NSWorkspace.shared.open(URL(string: forkRepositoryURL)!) }
+    @objc private func openIssue() { NSWorkspace.shared.open(URL(string: forkRepositoryURL + "/issues/new")!) }
     @objc private func quit() {
         Task {
             do { try await terminationHandler.beforeTermination(); terminateApp() }
