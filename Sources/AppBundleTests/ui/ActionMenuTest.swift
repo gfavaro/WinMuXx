@@ -257,7 +257,7 @@ final class ActionMenuTest: XCTestCase {
         XCTAssertTrue(menuWorkspaceTargets().allSatisfy { $0.workspace.projectId == focus.workspace.projectId })
     }
 
-    func testWorkspaceMenuCommandSwapsOnFocusedMonitor() async throws {
+    func testWorkspaceMenuCommandFocusesVisibleWorkspaceWithoutMovingIt() async throws {
         let displays = (0..<2).map { index in
             let rect = Rect(topLeftX: Double(index * 1920), topLeftY: 0, width: 1920, height: 1080)
             return TestMonitor(monitorAppKitNsScreenScreensId: index + 1, name: "Display\(index + 1)", rect: rect, visibleRect: rect, isMain: index == 0)
@@ -280,8 +280,8 @@ final class ActionMenuTest: XCTestCase {
         let payload = try XCTUnwrap(item.representedObject as? MenuCommandPayload)
         let result = try await payload.commands.runCmdSeq(.defaultEnv, .emptyStdin)
         XCTAssertEqual(result.exitCode, 0, result.stderr.joined(separator: "\n"))
-        XCTAssertEqual(displays[0].activeWorkspace, second)
-        XCTAssertEqual(displays[1].activeWorkspace, first)
+        XCTAssertEqual(displays[0].activeWorkspace, first)
+        XCTAssertEqual(displays[1].activeWorkspace, second)
         XCTAssertEqual(focus.workspace, second)
     }
 }

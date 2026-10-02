@@ -125,7 +125,7 @@ extension WorkspaceSidebarDragTest {
     }
 
     @MainActor
-    func testSidebarWorkspaceClickSwapsWorkspaceVisibleOnOtherMonitor() {
+    func testSidebarWorkspaceClickFocusesWorkspaceVisibleOnOtherMonitor() {
         let main = WorkspaceSidebarDragTestMonitor(
             monitorAppKitNsScreenScreensId: 1,
             name: "Main",
@@ -153,8 +153,8 @@ extension WorkspaceSidebarDragTest {
             secondaryWorkspace,
             targetMonitorScopeId: workspaceSidebarMonitorScopeId(for: main),
         ))
-        XCTAssertEqual(main.activeWorkspace, secondaryWorkspace)
-        XCTAssertEqual(secondary.activeWorkspace, mainWorkspace)
+        XCTAssertEqual(main.activeWorkspace, mainWorkspace)
+        XCTAssertEqual(secondary.activeWorkspace, secondaryWorkspace)
         XCTAssertEqual(focus.workspace, secondaryWorkspace)
     }
 

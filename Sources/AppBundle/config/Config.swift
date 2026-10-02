@@ -91,6 +91,9 @@ struct WorkspaceSidebarConfig: ConvenienceCopyable, Equatable, Sendable {
     var showSeconds: Bool = true
     var showDate: Bool = true
     var showWeekday: Bool = true
+    var appearance: WorkspaceSidebarAppearance = .system
+    var background: WorkspaceSidebarBackground = .sidebar
+    var frostedTint: WorkspaceSidebarFrostedTint = .automatic
     var chromeStyle: ChromeStyle = .liquidGlass
     var solidChromeColor: ChromeSolidColor = .midnight
     var solidChromeCustomColor: String = "#191B20"
@@ -99,6 +102,40 @@ struct WorkspaceSidebarConfig: ConvenienceCopyable, Equatable, Sendable {
     var workspaceLabels: [String: String] = [:]
     var projectLabels: [String: String] = [:]
     var projectColors: [String: String] = [:]
+}
+
+enum WorkspaceSidebarAppearance: String, CaseIterable, Identifiable, Sendable {
+    case system
+    case custom
+
+    var id: String { rawValue }
+}
+
+enum WorkspaceSidebarBackground: String, CaseIterable, Identifiable, Sendable {
+    case sidebar
+    case menuBar = "menu-bar"
+    case transparent
+
+    var id: String { rawValue }
+}
+
+enum WorkspaceSidebarFrostedTint: String, CaseIterable, Identifiable, Sendable {
+    case automatic, white, black, cyan, pink, indigo, purple, ice, aurora
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+            case .automatic: "Automatic"
+            case .white: "White"
+            case .black: "Black"
+            case .cyan: "Cyan"
+            case .pink: "Pink"
+            case .indigo: "Indigo"
+            case .purple: "Purple"
+            case .ice: "Ice — cyan / pink"
+            case .aurora: "Aurora — indigo / purple"
+        }
+    }
 }
 
 enum ChromeStyle: String, CaseIterable, Identifiable, Sendable {

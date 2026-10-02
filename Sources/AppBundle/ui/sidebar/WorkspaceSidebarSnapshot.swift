@@ -38,9 +38,21 @@ struct WorkspaceSidebarConfiguration: Equatable {
     var showsDate: Bool
     var showsWeekday: Bool
     var showsStatusPills: Bool
+    var appearance: WorkspaceSidebarAppearance = .system
+    var background: WorkspaceSidebarBackground = .sidebar
+    var frostedTint: WorkspaceSidebarFrostedTint = .automatic
     var chromeStyle: ChromeStyle
     var solidChromeColor: ChromeSolidColor
     var solidChromeCustomColor: String
+
+    func transparentExpansionProgress(visibleWidth: CGFloat) -> CGFloat {
+        max(0, min(1, (visibleWidth - collapsedWidth) / max(1, expandedWidth - collapsedWidth)))
+    }
+
+    func usesWallpaperContrast(visibleWidth: CGFloat, reduceTransparency: Bool) -> Bool {
+        appearance == .system && background == .transparent &&
+            visibleWidth <= collapsedWidth + 8 && !reduceTransparency
+    }
 
     static let empty = WorkspaceSidebarConfiguration(
         collapsedWidth: 0,

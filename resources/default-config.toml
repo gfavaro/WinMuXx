@@ -38,8 +38,8 @@ default-root-container-orientation = 'auto'
 on-focus-changed = []
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 # Workspace commands target the focused monitor unless --monitor is specified.
-# If the target workspace is visible elsewhere, the monitors exchange workspaces,
-# provided any workspace-to-monitor-force-assignment rules permit it.
+# If the target workspace is visible elsewhere, focus follows it to that monitor;
+# neither workspace moves. Hidden targets still respect forced monitor assignments.
 
 automatically-unhide-macos-hidden-apps = false
 automatically-tile-new-windows = true
@@ -85,7 +85,18 @@ on-mode-changed = []
     show-seconds = true
     show-date = false
     show-weekday = true
-    # Apply this style to sidebar, tab groups, and switcher chrome. Use 'solid' for opaque color.
+    # Sidebar only: native macOS material and adaptive colors, or the custom Chrome style below.
+    appearance = 'system'
+    # System appearance only: 'sidebar', 'menu-bar' (native approximation), or 'transparent'.
+    # Transparent: wallpaper-adaptive compact rail; translucent frosted glass when expanded.
+    # Reduce Transparency in macOS overrides these with an opaque system background.
+    background = 'sidebar'
+    # Expanded transparent sidebar only: automatic, white, black, cyan, pink, indigo,
+    # purple, ice (cyan/pink gradient), or aurora (indigo/purple gradient).
+    # Automatic samples the wallpaper's color behind the expanded sidebar on each monitor.
+    frosted-tint = 'automatic'
+    # Apply to tab groups, switcher, and sidebar only when appearance = 'custom'.
+    # Use 'solid' for opaque color. This does not change the system sidebar appearance.
     chrome-style = 'liquid-glass'
     # Used when chrome-style = 'solid'. Choose from the Appearance palette, or use 'custom'.
     solid-chrome-color = 'midnight'

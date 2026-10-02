@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct WorkspaceSidebarInUseOverrideOverlay: View {
+    @SidebarColors var sidebarColors: WorkspaceSidebarPalette
     let text: String
     let onOverride: () -> Void
     @State private var isOverrideHovered = false
@@ -23,13 +24,13 @@ struct WorkspaceSidebarInUseOverrideOverlay: View {
             VStack(spacing: 8) {
                 Text(text)
                     .font(.system(size: 10.5, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(0.88))
+                    .foregroundStyle(sidebarColors.text(opacity: 0.88))
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 12)
 
                 Button(action: onOverride) {
-                    Text("Override")
+                    Text("Focus workspace")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(Color.white)
                         .padding(.horizontal, 14)
@@ -42,7 +43,7 @@ struct WorkspaceSidebarInUseOverrideOverlay: View {
                 }
                 .overlay {
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .strokeBorder(Color.white.opacity(isOverrideHovered ? 0.28 : 0), lineWidth: 0.6)
+                        .strokeBorder(sidebarColors.foreground.opacity(isOverrideHovered ? 0.28 : 0), lineWidth: 0.6)
                 }
                 .onHover { hovering in
                     isOverrideHovered = hovering

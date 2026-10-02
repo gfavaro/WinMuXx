@@ -9,7 +9,7 @@ func focusWorkspaceFromSidebar(_ workspaceName: String, targetMonitorScopeId: St
     runWorkspaceSidebarSession {
         guard let workspace = Workspace.existing(byName: workspaceName) else { return }
         if !focusWorkspaceFromSidebar(workspace, targetMonitorScopeId: targetMonitorScopeId) {
-            showWorkspaceSidebarError("Monitor assignments prevent activating or swapping this workspace")
+            showWorkspaceSidebarError("Monitor assignment prevents activating this workspace")
         }
     }
 }
@@ -21,20 +21,17 @@ func focusWorkspaceFromSidebar(_ workspaceName: String, targetMonitorScopeId: St
 private func optimisticallyMarkWorkspaceFocusedInSidebar(_ workspaceName: String, targetMonitorScopeId: String?) {
     let workspaces = TrayMenuModel.shared.workspaceSidebarWorkspaces
     guard let workspace = Workspace.existing(byName: workspaceName) else { return }
-    let monitor = targetMonitorScopeId.flatMap(workspaceSidebarMonitor(forScopeId:)) ?? focus.workspace.workspaceMonitor
+    let requestedMonitor = targetMonitorScopeId.flatMap(workspaceSidebarMonitor(forScopeId:)) ?? focus.workspace.workspaceMonitor
+    let monitor = workspace.visibleMonitor ?? requestedMonitor
     guard isValidAssignment(workspace: workspace, screen: monitor.rect.topLeftCorner) else { return }
     let outgoing = monitor.activeWorkspace
-    let source = workspace.visibleMonitor
-    let swapping = source.map { $0.rect.topLeftCorner != monitor.rect.topLeftCorner } ?? false
-    if swapping, let source, !isValidAssignment(workspace: outgoing, screen: source.rect.topLeftCorner) { return }
     var visibleNames = Set(monitors.map { $0.activeWorkspace.name })
-    visibleNames.remove(outgoing.name)
+    if !workspace.isVisible { visibleNames.remove(outgoing.name) }
     visibleNames.insert(workspaceName)
-    if swapping { visibleNames.insert(outgoing.name) }
     TrayMenuModel.shared.workspaceSidebarWorkspaces = workspaces.map { w in
         let isFocused = w.name == workspaceName
         let isVisible = visibleNames.contains(w.name)
-        let destination: Monitor? = isFocused ? monitor : (swapping && w.name == outgoing.name ? source : nil)
+        let destination: Monitor? = isFocused ? monitor : nil
         return WorkspaceSidebarWorkspaceViewModel(
             name: w.name,
             projectId: w.projectId,
@@ -70,7 +67,7 @@ func overrideWorkspaceInUseFromSidebar(_ workspaceName: String, targetMonitorSco
               let targetMonitor = workspaceSidebarMonitor(forScopeId: targetMonitorScopeId)
         else { return }
         if !activateWorkspaceForUser(workspace, on: targetMonitor) {
-            showWorkspaceSidebarError("Monitor assignments prevent swapping these workspaces")
+            showWorkspaceSidebarError("Monitor assignment prevents activating this workspace")
         }
     }
 }

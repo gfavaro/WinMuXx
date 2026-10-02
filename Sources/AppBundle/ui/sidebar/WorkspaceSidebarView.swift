@@ -3,6 +3,17 @@ import Common
 import SwiftUI
 
 struct WorkspaceSidebarView: View {
+    @Environment(\.colorSchemeContrast) var sidebarContrast
+    @Environment(\.workspaceSidebarPreviewAccessibility) var previewAccessibility
+    @Environment(\.accessibilityReduceTransparency) var reduceTransparency
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
+    @Environment(\.colorScheme) var colorScheme
+    var usesTransparentContrast: Bool {
+        snapshot.configuration.usesWallpaperContrast(visibleWidth: snapshot.visibleWidth, reduceTransparency: reduceTransparency || previewAccessibility.reduceTransparency)
+    }
+    var sidebarColors: WorkspaceSidebarPalette {
+        WorkspaceSidebarPalette(appearance: snapshot.configuration.appearance, increasedContrast: sidebarContrast == .increased || previewAccessibility.increasedContrast, transparentContrast: usesTransparentContrast, colorScheme: colorScheme)
+    }
     let snapshot: WorkspaceSidebarSnapshot
     let actions: WorkspaceSidebarActions
     @State var projectSwipeTranslation: CGFloat = 0
@@ -49,6 +60,13 @@ struct WorkspaceSidebarView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(Color.clear)
+        .transaction { transaction in
+            if reduceMotion { transaction.animation = nil }
+        }
+        .environment(\.workspaceSidebarAppearance, snapshot.configuration.appearance)
+        .environment(\.workspaceSidebarTransparentContrast, usesTransparentContrast)
+        .shadow(color: usesTransparentContrast ? (colorScheme == .dark ? Color.black : Color.white).opacity(0.85) : .clear, radius: 1, x: 0, y: 1)
+        .modifier(WorkspaceSidebarColorScheme(appearance: snapshot.configuration.appearance))
         .onChange(of: snapshot.visibleWidth) { visibleWidth in
             if visibleWidth <= collapsedWidth + 0.5 {
                 resetTransientSidebarState()
@@ -105,7 +123,7 @@ struct WorkspaceSidebarView: View {
                 return
             }
             finishSidebarSearch(clearText: true)
-            withAnimation(.easeOut(duration: 0.08)) {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.08)) {
                 isProjectMenuOpen = false
                 isSidebarCollapsing = true
                 isSidebarExpanding = false
@@ -128,7 +146,7 @@ struct WorkspaceSidebarView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: workspaceSidebarDismissProjectMenusNotification)) { _ in
             if isProjectMenuOpen {
-                withAnimation(.easeOut(duration: 0.10)) {
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.10)) {
                     isProjectMenuOpen = false
                 }
             }
@@ -347,10 +365,12 @@ struct WorkspaceSidebarContainerView: View {
     let actions: WorkspaceSidebarActions
 
     var body: some View {
+        let snapshot = workspaceSidebarSnapshot(from: viewModel)
         WorkspaceSidebarView(
-            snapshot: workspaceSidebarSnapshot(from: viewModel),
+            snapshot: snapshot,
             actions: actions
         )
+        .modifier(WorkspaceSidebarWallpaperContrast(snapshot: snapshot))
     }
 }
 extension WorkspaceSidebarView {
@@ -511,7 +531,7 @@ extension WorkspaceSidebarView {
     func finishProjectSwipeNavigation(to projectId: WorkspaceProjectId, direction: Int) {
         let startProjectId = projectSwipeStartProjectId
         let fullPageOffset = -CGFloat(direction) * max(projectPagerWidth, snapshot.configuration.expandedWidth, 1)
-        withAnimation(.easeOut(duration: 0.12)) {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.12)) {
             projectSwipeTranslation = fullPageOffset
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
@@ -522,7 +542,7 @@ extension WorkspaceSidebarView {
     }
 
     func finishProjectSwipeCreation() {
-        withAnimation(.interactiveSpring(response: 0.16, dampingFraction: 0.9)) {
+        withAnimation(reduceMotion ? nil : .interactiveSpring(response: 0.16, dampingFraction: 0.9)) {
             resetProjectSwipe()
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
@@ -556,7 +576,7 @@ extension WorkspaceSidebarView {
     }
 
     func finishProjectSwipeSnapBack() {
-        withAnimation(.interactiveSpring(response: 0.18, dampingFraction: 0.9)) {
+        withAnimation(reduceMotion ? nil : .interactiveSpring(response: 0.18, dampingFraction: 0.9)) {
             resetProjectSwipe()
         }
     }
@@ -727,13 +747,13 @@ extension WorkspaceSidebarView {
         HStack(spacing: 7) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.white.opacity(0.66))
+                .foregroundStyle(sidebarColors.text(opacity: 0.66))
                 .frame(width: 14)
 
             Text(searchText)
                 .font(.system(size: 12, weight: .medium))
                 .lineLimit(1)
-                .foregroundStyle(Color.white.opacity(0.9))
+                .foregroundStyle(sidebarColors.text(opacity: 0.9))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Button {
@@ -742,7 +762,7 @@ extension WorkspaceSidebarView {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(Color.white.opacity(0.7))
+                    .foregroundStyle(sidebarColors.text(opacity: 0.7))
                     .frame(width: 18, height: 18)
                     .contentShape(Rectangle())
             }
@@ -753,11 +773,11 @@ extension WorkspaceSidebarView {
         .frame(width: workspaceSidebarSectionWidth(expansionProgress, layout: snapshot.configuration), height: workspaceSidebarSearchHeight)
         .background {
             RoundedRectangle(cornerRadius: workspaceSidebarDropdownCornerRadius, style: .continuous)
-                .fill(Color.white.opacity(0.11))
+                .fill(sidebarColors.foreground.opacity(0.11))
         }
         .overlay {
             RoundedRectangle(cornerRadius: workspaceSidebarDropdownCornerRadius, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.6)
+                .strokeBorder(sidebarColors.foreground.opacity(0.12), lineWidth: 0.6)
         }
         .padding(.leading, leadingInset)
         .padding(.trailing, trailingInset)
@@ -770,19 +790,28 @@ extension WorkspaceSidebarView {
         WorkspaceSidebarPanelShape(rightCornerRadius: workspaceSidebarPanelRightCornerRadius)
     }
 
+    @ViewBuilder
     func sidebarSurface<S: Shape>(in shape: S) -> some View {
         // The sidebar meets the display edge, so an outline around all four sides reads as a
         // second, lighter panel behind the content. Keep the material flat and use only the
         // trailing separator to define its boundary.
-        GlassSurface(
-            shape: shape,
-            hasBorder: false,
-            style: snapshot.configuration.chromeStyle,
-            solidColor: snapshot.configuration.resolvedSolidChromeColor,
-        )
-        // This panel has no safe-area inset. Expanding the material here gives the native
-        // glass backing layer a rectangular area outside the rounded trailing corners.
-        .clipShape(shape)
+        if snapshot.configuration.appearance == .system {
+            if snapshot.configuration.background == .transparent && !reduceTransparency && !previewAccessibility.reduceTransparency {
+                let progress = snapshot.configuration.transparentExpansionProgress(visibleWidth: snapshot.visibleWidth)
+                WorkspaceSidebarFrostedSurface(tint: snapshot.configuration.frostedTint).opacity(progress).clipShape(shape)
+            } else {
+                WorkspaceSidebarSystemSurface(background: snapshot.configuration.background).clipShape(shape)
+            }
+        } else {
+            GlassSurface(
+                shape: shape,
+                hasBorder: false,
+                style: snapshot.configuration.chromeStyle,
+                solidColor: snapshot.configuration.resolvedSolidChromeColor,
+            )
+            // Keep the native glass backing layer inside the rounded trailing corners.
+            .clipShape(shape)
+        }
     }
 
     func sidebarSwipeCaptureOverlay(expansionProgress: CGFloat) -> some View {

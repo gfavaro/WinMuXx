@@ -16,6 +16,9 @@ private let workspaceSidebarParser: [String: any ParserProtocol<WorkspaceSidebar
     "show-seconds": Parser(\.showSeconds, parseBool),
     "show-date": Parser(\.showDate, parseBool),
     "show-weekday": Parser(\.showWeekday, parseBool),
+    "appearance": Parser(\.appearance, parseWorkspaceSidebarAppearance),
+    "background": Parser(\.background, parseWorkspaceSidebarBackground),
+    "frosted-tint": Parser(\.frostedTint, parseWorkspaceSidebarFrostedTint),
     "chrome-style": Parser(\.chromeStyle, parseChromeStyle),
     "solid-chrome-color": Parser(\.solidChromeColor, parseChromeSolidColor),
     "solid-chrome-custom-color": Parser(\.solidChromeCustomColor, parseChromeSolidCustomColor),
@@ -54,6 +57,33 @@ func parseWorkspaceSidebar(
 private func parseChromeSolidCustomColor(_ raw: TOMLValueConvertible, _ backtrace: TomlBacktrace) -> ParsedToml<String> {
     parseString(raw, backtrace).flatMap { rawValue in
         normalizedWorkspaceSidebarColorHex(rawValue).orFailure(.semantic(backtrace, "Use a six-digit hex color, such as #1A2B3C"))
+    }
+}
+
+private func parseWorkspaceSidebarAppearance(_ raw: TOMLValueConvertible, _ backtrace: TomlBacktrace) -> ParsedToml<WorkspaceSidebarAppearance> {
+    parseString(raw, backtrace).flatMap { value in
+        WorkspaceSidebarAppearance(rawValue: value).orFailure(.semantic(
+            backtrace,
+            "Possible values: \(WorkspaceSidebarAppearance.allCases.map(\.rawValue).joined(separator: ", "))",
+        ))
+    }
+}
+
+private func parseWorkspaceSidebarBackground(_ raw: TOMLValueConvertible, _ backtrace: TomlBacktrace) -> ParsedToml<WorkspaceSidebarBackground> {
+    parseString(raw, backtrace).flatMap { value in
+        WorkspaceSidebarBackground(rawValue: value).orFailure(.semantic(
+            backtrace,
+            "Possible values: \(WorkspaceSidebarBackground.allCases.map(\.rawValue).joined(separator: ", "))",
+        ))
+    }
+}
+
+private func parseWorkspaceSidebarFrostedTint(_ raw: TOMLValueConvertible, _ backtrace: TomlBacktrace) -> ParsedToml<WorkspaceSidebarFrostedTint> {
+    parseString(raw, backtrace).flatMap { value in
+        WorkspaceSidebarFrostedTint(rawValue: value).orFailure(.semantic(
+            backtrace,
+            "Possible values: \(WorkspaceSidebarFrostedTint.allCases.map(\.rawValue).joined(separator: ", "))",
+        ))
     }
 }
 

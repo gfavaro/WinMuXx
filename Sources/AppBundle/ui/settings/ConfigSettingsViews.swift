@@ -89,6 +89,9 @@ struct ShortcutAppearanceSettingsView: View {
     @State private var showDate = config.workspaceSidebar.showDate
     @State private var showWeekday = config.workspaceSidebar.showWeekday
     @State private var chromeStyle = config.workspaceSidebar.chromeStyle
+    @State private var sidebarAppearance = config.workspaceSidebar.appearance
+    @State private var sidebarBackground = config.workspaceSidebar.background
+    @State private var sidebarFrostedTint = config.workspaceSidebar.frostedTint
     @State private var solidChromeColor = config.workspaceSidebar.solidChromeColor
     @State private var solidChromeCustomColor = config.workspaceSidebar.solidChromeCustomColor
     @State private var sidebarWidth = config.workspaceSidebar.width
@@ -108,7 +111,7 @@ struct ShortcutAppearanceSettingsView: View {
     var body: some View {
         SettingsScrollView {
             SettingsSection("Chrome") {
-                SettingsPicker("Style", selection: $chromeStyle, help: "Apply Liquid Glass or an opaque solid color to the sidebar, tab groups, and switcher. Settings keep their own appearance.") {
+                SettingsPicker("Style", selection: $chromeStyle, help: "Style for tab groups, the switcher, and the sidebar when its appearance is Custom. Settings keep their own appearance.") {
                     Text("Liquid Glass").tag(ChromeStyle.liquidGlass)
                     Text("Solid color").tag(ChromeStyle.solid)
                 } onChange: { persist("workspace-sidebar", "chrome-style", "'\(chromeStyle.rawValue)'") }
@@ -121,6 +124,19 @@ struct ShortcutAppearanceSettingsView: View {
                 )
             }
             SettingsSection("Sidebar") {
+                SettingsPicker("Sidebar appearance", selection: $sidebarAppearance, help: "System follows macOS with a native translucent surface. Custom keeps the configured Chrome style and dark controls.") {
+                    Text("System").tag(WorkspaceSidebarAppearance.system)
+                    Text("Custom").tag(WorkspaceSidebarAppearance.custom)
+                } onChange: { persist("workspace-sidebar", "appearance", "'\(sidebarAppearance.rawValue)'") }
+                SettingsPicker("Sidebar background", selection: $sidebarBackground, help: "System appearance only. Transparent adapts the compact rail's contrast to the local wallpaper file and adds translucent frosted glass when expanded. Menu bar style uses a native translucent approximation. Reduce Transparency overrides both with an opaque background.") {
+                    Text("Sidebar material").tag(WorkspaceSidebarBackground.sidebar)
+                    Text("Menu bar style").tag(WorkspaceSidebarBackground.menuBar)
+                    Text("Transparent").tag(WorkspaceSidebarBackground.transparent)
+                } onChange: { persist("workspace-sidebar", "background", "'\(sidebarBackground.rawValue)'") }
+                .disabled(sidebarAppearance != .system)
+                SettingsSidebarFrostedPalette(selection: $sidebarFrostedTint,
+                    isEnabled: sidebarAppearance == .system && sidebarBackground == .transparent,
+                    onSelectionChange: { persist("workspace-sidebar", "frosted-tint", "'\(sidebarFrostedTint.rawValue)'") })
                 SettingsToggle("Show sidebar", isOn: $sidebarEnabled, help: "Show the workspace rail on configured displays.") { sidebarBool("enabled", sidebarEnabled) }
                 SettingsToggle("Focus sidebar monitor only", isOn: $sidebarFocusEnabled, help: "Show the sidebar only on the focused monitor when monitor scope allows it.") { sidebarBool("enable-focus", sidebarFocusEnabled) }
                 SettingsToggle("Reveal sidebar at the display edge", isOn: $sidebarAutoHide, help: "Hide the compact rail until the pointer reaches the left edge.") { sidebarBool("auto-hide", sidebarAutoHide) }
@@ -370,6 +386,47 @@ private struct SettingsPicker<Selection: Hashable, Content: View>: View {
             Divider().padding(.leading, 14)
         }
         .onChange(of: selection) { _ in onChange() }
+    }
+}
+
+private struct SettingsSidebarFrostedPalette: View {
+    @Binding var selection: WorkspaceSidebarFrostedTint
+    let isEnabled: Bool
+    let onSelectionChange: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Expanded frosted tint")
+            Text("Automatic samples the wallpaper behind this monitor's sidebar. Other colors override the expanded glass tint. The compact rail keeps wallpaper-adaptive contrast.")
+                .font(.caption).foregroundStyle(.secondary)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+                ForEach(WorkspaceSidebarFrostedTint.allCases) { tint in
+                    Button { selection = tint } label: {
+                        VStack(spacing: 4) {
+                            LinearGradient(colors: tint.colors(colorScheme: colorScheme), startPoint: .topLeading, endPoint: .bottomTrailing)
+                                .frame(height: 38)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 8).strokeBorder(.secondary.opacity(0.3), lineWidth: 1)
+                                    if selection == tint {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.white, .black.opacity(0.75))
+                                    }
+                                }
+                            Text(tint.title).font(.caption).foregroundStyle(.primary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(tint.title)
+                    .accessibilityAddTraits(selection == tint ? .isSelected : [])
+                }
+            }
+        }
+        .padding(14)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : 0.45)
+        .onChange(of: selection) { _ in onSelectionChange() }
     }
 }
 

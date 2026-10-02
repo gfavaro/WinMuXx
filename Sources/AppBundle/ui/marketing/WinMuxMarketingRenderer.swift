@@ -32,18 +32,105 @@ public func renderWinMuxSafariPlasticityProofImage(to outputURL: URL) throws {
 }
 
 @MainActor
+public func renderWinMuxSidebarAppearanceProofs(to directory: URL) throws {
+    let application = NSApplication.shared
+    application.setActivationPolicy(.accessory)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    var variants: [(String, ColorScheme, Bool, Bool, Bool, WorkspaceSidebarAppearance, ChromeStyle, WorkspaceSidebarBackground)] = [
+        ("light-expanded", .light, false, false, false, .system, .liquidGlass, .sidebar),
+        ("dark-expanded", .dark, false, false, false, .system, .liquidGlass, .sidebar),
+        ("light-collapsed", .light, true, false, false, .system, .liquidGlass, .sidebar),
+        ("dark-collapsed", .dark, true, false, false, .system, .liquidGlass, .sidebar),
+        ("reduced-transparency", .light, false, true, false, .system, .liquidGlass, .sidebar),
+        ("increased-contrast", .light, false, false, true, .system, .liquidGlass, .sidebar),
+        ("custom-liquid", .light, false, false, false, .custom, .liquidGlass, .sidebar),
+        ("custom-solid", .light, false, false, false, .custom, .solid, .sidebar),
+        ("menu-bar-light", .light, false, false, false, .system, .liquidGlass, .menuBar),
+        ("menu-bar-dark", .dark, false, false, false, .system, .liquidGlass, .menuBar),
+        ("transparent-light", .light, false, false, false, .system, .liquidGlass, .transparent),
+        ("transparent-dark", .dark, false, false, false, .system, .liquidGlass, .transparent),
+        ("transparent-light-collapsed", .light, true, false, false, .system, .liquidGlass, .transparent),
+        ("transparent-dark-collapsed", .dark, true, false, false, .system, .liquidGlass, .transparent),
+        ("transparent-reduced", .light, false, true, false, .system, .liquidGlass, .transparent),
+        ("wallpaper-tint-blue", .dark, false, false, false, .system, .liquidGlass, .transparent),
+        ("wallpaper-tint-pink", .light, false, false, false, .system, .liquidGlass, .transparent),
+    ]
+    variants += WorkspaceSidebarFrostedTint.allCases.map { tint in
+        ("frosted-\(tint.rawValue)", tint.preferredColorScheme ?? .dark, false, false, false, .system, .liquidGlass, .transparent)
+    }
+    for (name, scheme, collapsed, reduceTransparency, contrast, appearance, chrome, background) in variants {
+        var snapshot = MarketingFixtures.sidebarSnapshot
+        snapshot.configuration.appearance = appearance
+        snapshot.configuration.background = background
+        if name.hasPrefix("frosted-"), let tint = WorkspaceSidebarFrostedTint(rawValue: String(name.dropFirst("frosted-".count))) {
+            snapshot.configuration.frostedTint = tint
+        }
+        snapshot.configuration.chromeStyle = chrome
+        snapshot.visibleWidth = collapsed ? snapshot.configuration.collapsedWidth : snapshot.configuration.expandedWidth
+        let size = CGSize(width: snapshot.visibleWidth, height: 700)
+        // A code-defined backdrop, not the user's wallpaper or application windows.
+        let backdrop = NSWindow(contentRect: CGRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
+        backdrop.isReleasedWhenClosed = false
+        backdrop.level = .floating
+        let backdropColors: [Color] = scheme == .light
+            ? [.white, .cyan.opacity(0.35), .pink.opacity(0.3)]
+            : [.black, .indigo, .purple]
+        backdrop.contentView = NSHostingView(rootView: LinearGradient(
+            colors: backdropColors,
+            startPoint: .topLeading, endPoint: .bottomTrailing
+        ))
+        backdrop.backgroundColor = scheme == .light ? .white : .black
+        if let screen = NSScreen.main?.visibleFrame {
+            backdrop.setFrameOrigin(CGPoint(x: screen.midX - size.width / 2, y: screen.midY - size.height / 2))
+        }
+        backdrop.orderFrontRegardless()
+        defer { backdrop.orderOut(nil) }
+        let wallpaperSample: WorkspaceSidebarWallpaperSample? = switch name {
+            case "wallpaper-tint-blue": WorkspaceSidebarWallpaperSample(tone: .dark, red: 0.1, green: 0.2, blue: 0.8)
+            case "wallpaper-tint-pink": WorkspaceSidebarWallpaperSample(tone: .light, red: 0.9, green: 0.6, blue: 0.7)
+            default: nil
+        }
+        try renderMarketingView(
+            WorkspaceSidebarView(snapshot: snapshot)
+                .environment(\.workspaceSidebarWallpaperSample, wallpaperSample)
+                .background {
+                // Include the synthetic backdrop in the transparent proof's own surface,
+                // so exported PNGs show controls over it rather than over transparent pixels.
+                if background == .transparent {
+                    LinearGradient(colors: backdropColors, startPoint: .topLeading, endPoint: .bottomTrailing)
+                }
+            },
+            to: directory.appendingPathComponent(name + ".png"),
+            size: size,
+            colorScheme: scheme,
+            reduceTransparency: reduceTransparency,
+            increasedContrast: contrast,
+            isOpaque: false
+        )
+    }
+}
+
+@MainActor
 private func renderMarketingView<Content: View>(
     _ rootView: Content,
     to outputURL: URL,
     size: CGSize = CGSize(width: 1_600, height: 900),
-    renderScale: CGFloat = 1
+    renderScale: CGFloat = 1,
+    colorScheme: ColorScheme = .dark,
+    reduceTransparency: Bool = false,
+    increasedContrast: Bool = false,
+    isOpaque: Bool = true
 ) throws {
     let renderSize = CGSize(width: size.width * renderScale, height: size.height * renderScale)
     let content = rootView
         .frame(width: size.width, height: size.height)
         .scaleEffect(renderScale, anchor: .topLeading)
         .frame(width: renderSize.width, height: renderSize.height, alignment: .topLeading)
-        .environment(\.colorScheme, .dark)
+        .environment(\.colorScheme, colorScheme)
+        .environment(\.workspaceSidebarPreviewAccessibility, WorkspaceSidebarPreviewAccessibility(
+            reduceTransparency: reduceTransparency,
+            increasedContrast: increasedContrast
+        ))
         .environment(\.workspaceSidebarClockDate, Calendar.current.date(
             from: DateComponents(year: 2026, month: 9, day: 5, hour: 10)
         ))
@@ -67,8 +154,12 @@ private func renderMarketingView<Content: View>(
         defer: false
     )
     window.contentView = hostingView
-    window.backgroundColor = .black
-    window.isOpaque = true
+    window.backgroundColor = isOpaque ? .black : .clear
+    window.isOpaque = isOpaque
+    let appearanceName: NSAppearance.Name = increasedContrast
+        ? (colorScheme == .light ? .accessibilityHighContrastAqua : .accessibilityHighContrastDarkAqua)
+        : (colorScheme == .light ? .aqua : .darkAqua)
+    window.appearance = NSAppearance(named: appearanceName)
     window.hasShadow = false
     window.level = .floating
     window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]

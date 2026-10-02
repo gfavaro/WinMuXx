@@ -3,6 +3,7 @@ import Common
 import SwiftUI
 
 struct WorkspaceSidebarProjectPager: View {
+    @SidebarColors var sidebarColors: WorkspaceSidebarPalette
     let projects: [WorkspaceSidebarProjectViewModel]
     let selectedProjectId: WorkspaceProjectId
     let expansionProgress: CGFloat
