@@ -13,9 +13,19 @@ Automatic upstream updates are disabled. Build with `make fork-build` or downloa
 
 https://github.com/user-attachments/assets/51983568-a168-494f-8ae3-5f50ca1efce1
 
-## Highlights
+## What comes from where
 
-### Menu-bar actions and diagnostics
+The original WinMux provides the project and workspace model, sidebar, tab groups, tiling commands
+and configurable keybindings. WinMuXx keeps that foundation and adds or changes the features marked
+below as fork additions. Upstream may add similar features later.
+
+WinMuXx additions include automatic dwindle for existing and restored windows, monitor-aware
+workspace navigation, native window borders, configurable sidebar chrome, menu-bar action shortcuts,
+diagnostics, crash recovery, and the `WinMuXx` app / `winmuxx` CLI names.
+
+## Features
+
+### WinMuXx fork: menu-bar actions and diagnostics
 
 Click the WinMuXx menu-bar icon to browse window, layout, workspace, project and monitor actions.
 Shortcuts come from the effective configuration for the active mode, and the menu updates whenever
@@ -34,11 +44,15 @@ the windows. It validates the owning app's process and launch identity, skips di
 and native fullscreen/minimized windows, and retains failed entries for another attempt. Choose
 **Enable** to resume tiling. The recovery journal is separate from the saved managed layout.
 
-### Projects
+### Original WinMux: projects
 Projects are collection of workspaces. Think of it like a parent/child hiearchy, you can switch between projects. Each project has it's own set of workspaces.
 
-### Sidebar
+### Original WinMux: sidebar
 The sidebar is a more interactively-performant and useful alternative to [Sketchybar](https://github.com/felixkratz/sketchybar) and traditional workspace menu bar dropdowns for most everyday tasks. It provides better visibility into spaces and spatial awareness on the desktop.
+
+WinMuXx adds auto-hide, an always-expanded mode, monitor selection and configurable chrome shared
+with tab groups and the switcher. On macOS 26 and newer, native Liquid Glass is available. Use the
+Appearance settings to choose a solid color when you want more contrast.
 
 You can drag windows in and out of the sidebar from and to the current workspace. You can rearrange windows across all spaces using the sidebar, including tab groups.
 
@@ -80,7 +94,7 @@ The sidebar clock can be configured independently:
 the month and day, and the weekday; for example, `show-date = false` with
 `show-weekday = true` leaves a weekday-only calendar label in the expanded sidebar.
 
-### Window borders
+### WinMuXx fork: window borders
 
 WinMuXx draws click-through borders around visible managed windows, with a different color for the
 focused window. The settings follow [Dinky's `[borders]` configuration](https://github.com/mikker/Dinky/blob/main/docs/configuration.md#borders):
@@ -99,7 +113,7 @@ Changes apply on config reload. Borders hide with their windows and in fullscree
 started JankyBorders in `after-startup-command`, remove that command and stop the external `borders`
 process to avoid drawing two sets of borders.
 
-### Window and sidebar spacing
+### Original WinMux: window and sidebar spacing
 
 The `[gaps]` settings control the visible borders around tiled windows. `inner.horizontal`
 and `inner.vertical` set the space between neighboring windows. The outer gaps set the space
@@ -117,7 +131,7 @@ For borderless tiling, including no border beside the sidebar:
     outer.top = 0
     outer.right = 0
 ```
-### Tab Groups
+### Original WinMux: tab groups
 ![](resources/screenshots/tab-groups.png)
 Tab groups allow you to have many windows occupy the same footprint, similar to Yabai stacks but with browser-like tab behavior. This is useful when you want to have multiple pieces of reference information next to an editor, multiple tabs in different browser profiles, or, when you simply want multiple fullscreen views without the additional friction and overhead of creating a new workspace.
 
@@ -125,7 +139,7 @@ Unlike stack-only layouts, WinMuXx tab groups behave more intuitively like you w
 
 ### Philosophy
 
-#### Automatic tiling
+#### WinMuXx fork: automatic tiling and dwindle
 
 With `default-root-container-layout = 'dwindle'`, existing tiled windows also use dwindle at startup,
 including tiled roots restored from older saved state. Switching the default to dwindle while WinMuXx
@@ -146,7 +160,7 @@ While dragging a window by its title bar, shake it horizontally to toggle betwee
 enable-shake-to-toggle-tiling = false
 ```
 
-#### Workspaces
+#### WinMuXx fork: workspace navigation
 Empty workspaces are collected when no longer needed, but configured persistent workspaces and the active viewport
 workspace can remain empty. Numeric workspace arguments are display positions; use `workspace --name <name>` to
 select an internal workspace name directly.
@@ -165,12 +179,12 @@ the destination display. Both assignments must respect `workspace-to-monitor-for
 project-wide. `workspace-back-and-forth` and `--auto-back-and-forth` use each display's own history.
 Clicking a sidebar activates on that sidebar's display using the same swap policy.
 
-### Multi-Monitors
+### Original WinMux: multi-monitor support
 Monitors share the global project/workspace state. Each monitor can be treated as *independent* from each other. They each just use the sidebar to browse through projects and 'select' a workspace to view. 
 
 Monitors can not be attached to the same workspace at the same time. They can be on the same project at the same time.
 
-#### App Launching
+#### Original WinMux: app launching
 WinMuXx supports single-modifer keybindings (e.g. triggering an action on press of `⌘`)
 
 I highly recommend that you configure the apps you use every day to be launch with Left/Right Option+Command, or similar shortcuts, otherwise it might be hard to launch common things into the current workspace (and instead, take you to the other workspace where the app is currently active). Here is some of the apps that I have keybinded:
@@ -213,7 +227,7 @@ end tell
 
 ```
 
-## Installation
+## WinMuXx fork: installation
 Download the latest WinMuXx ZIP from this fork's [Releases](https://github.com/gfavaro/WinMuXx/releases), or build it locally:
 
 ```sh
@@ -228,7 +242,7 @@ The standalone CLI executable is named `winmuxx`; SwiftPM reports its build dire
 `swift build -c release --show-bin-path`. The app bundle includes it as
 `Contents/MacOS/winmuxx-cli` so it cannot collide with the app executable on case-insensitive disks.
 
-## Migrating
+## Migrating from WinMux or AeroSpace
 ### From AeroSpace
 WinMuXx keeps its config in `${XDG_CONFIG_HOME:-~/.config}/winmux-gf/winmux.toml`.
 
