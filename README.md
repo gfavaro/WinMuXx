@@ -11,6 +11,20 @@ https://github.com/user-attachments/assets/51983568-a168-494f-8ae3-5f50ca1efce1
 
 ## Highlights
 
+### Manual crash recovery
+
+After an interrupted session, the menu can offer Recover Windows from Previous
+Session. WinMux records original geometry before moving managed windows, in a
+separate `recovery-journal.json` under its Application Support directory. The
+journal is not the saved managed layout and does not store window titles.
+
+Recovery requires confirmation, pauses tiling and validates app/process launch
+identity before restoring frames. It skips disconnected displays, minimized
+and native-fullscreen windows; entries whose restoration fails remain available.
+Enable resumes tiling. Nothing is recovered automatically and no native Spaces
+are manipulated. Corrupt/unsupported journals or files owned by another live
+session are preserved and reported in Diagnostics. No new TOML options are needed.
+
 ### Menu-bar actions and diagnostics
 
 Click the menu-bar icon for window, layout, workspace, project and monitor

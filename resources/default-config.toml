@@ -2,6 +2,7 @@ config-version = 2
 
 # The menu shows shortcuts from the active mode; unconfigured actions remain blank.
 # Diagnostics reports the loaded config path. Menu and diagnostics need no extra options.
+# Crash recovery is an explicit menu action after an interrupted session; no TOML option.
 # Optional startup/focus callbacks; empty lists preserve the default behavior.
 after-startup-command = []
 on-focus-changed = []

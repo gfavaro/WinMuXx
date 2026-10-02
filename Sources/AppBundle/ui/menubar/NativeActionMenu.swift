@@ -133,6 +133,12 @@ final class NativeActionMenu: NSObject, NSMenuDelegate {
         menu.addItem(callbackItem("Copy Version", #selector(copyVersion)))
         menu.addItem(callbackItem("Open Config", #selector(openConfig)))
         menu.addItem(callbackItem("Diagnostics…", #selector(openDiagnostics)))
+        let recoverableCount = WindowRecoveryController.shared.recoverableEntries.count
+        if recoverableCount > 0 {
+            let item = callbackItem("Recover \(recoverableCount) Windows from Previous Session…", #selector(recoverWindows))
+            item.isEnabled = !WindowRecoveryController.shared.isRecovering
+            menu.addItem(item)
+        }
         if checkForUpdates != nil { menu.addItem(callbackItem("Check for Updates…", #selector(checkUpdates))) }
         menu.addItem(callbackItem("GitHub Repository", #selector(openRepository)))
         menu.addItem(callbackItem("File an Issue…", #selector(openIssue)))
@@ -227,6 +233,18 @@ final class NativeActionMenu: NSObject, NSMenuDelegate {
         NSWorkspace.shared.open(findCustomConfigUrl().urlOrNil ?? ((try? ensureBootstrapConfigExistsIfNeeded()) ?? preferredEditableConfigUrl()))
     }
     @objc private func openDiagnostics() { DiagnosticsWindowController.shared.show() }
+    @objc private func recoverWindows() {
+        let alert = NSAlert()
+        alert.messageText = "Recover windows from a previous session?"
+        alert.informativeText = "WinMux will pause tiling and restore their original positions and sizes. Windows whose app identity changed or whose original display is disconnected will be skipped."
+        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: "Pause Tiling and Recover")
+        guard alert.runModal() == .alertSecondButtonReturn else { return }
+        Task {
+            let report = await WindowRecoveryController.shared.recoverAfterCrash()
+            MessageModel.shared.message = Message(description: "Window Recovery", body: report)
+        }
+    }
     @objc private func checkUpdates() { checkForUpdates?() }
     @objc private func openRepository() { NSWorkspace.shared.open(URL(string: "https://github.com/zimengxiong/winmux")!) }
     @objc private func openIssue() { NSWorkspace.shared.open(URL(string: "https://github.com/zimengxiong/winmux/issues/new/choose")!) }

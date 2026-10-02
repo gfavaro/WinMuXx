@@ -12,6 +12,9 @@ struct EnableCommand: Command {
             case .off: false
             case .toggle: !TrayMenuModel.shared.isEnabled
         }
+        if newState && WindowRecoveryController.shared.isRecovering {
+            return io.err("Window recovery is running. Wait for it to finish before enabling tiling.")
+        }
         if newState == prevState {
             if !args.failIfNoop {
                 io.out((newState ? "Already enabled" : "Already disabled") +
@@ -20,6 +23,7 @@ struct EnableCommand: Command {
             return !args.failIfNoop
         }
         TrayMenuModel.shared.isEnabled = newState
+        if newState { WindowRecoveryController.shared.resumeTiling() }
         if !newState {
             TrayMenuModel.shared.isWorkspaceSidebarExpanded = false
             clearPendingWindowDragIntent()

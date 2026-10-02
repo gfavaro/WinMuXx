@@ -27,6 +27,7 @@ private struct AppServerTerminationHandler: TerminationHandler {
     func beforeTermination() async throws {
         persistFrozenWorldForRestartIfPossible()
         try await makeAllWindowsVisibleAndRestoreSize()
+        WindowRecoveryController.shared.finishCleanly()
         await toggleReleaseServerIfDebug(.on)
     }
 }

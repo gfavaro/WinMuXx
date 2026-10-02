@@ -43,6 +43,7 @@ final class MacWindow: Window {
         let window = MacWindow(windowId, macApp, lastFloatingSize: rect?.size, parent: data.parent, adaptiveWeight: data.adaptiveWeight, index: data.index)
         window.recordAuthoritativeActualRect(rect)
         allWindowsMap[windowId] = window
+        WindowRecoveryController.shared.recordBeforeMutation(window, originalRect: rect)
 
         try await debugWindowsIfRecording(window)
         let didRestorePersistedFrozenWorld = try await restorePersistedFrozenWorldIfNeeded(newlyDetectedWindow: window)
@@ -92,6 +93,7 @@ final class MacWindow: Window {
         if MacWindow.allWindowsMap.removeValue(forKey: windowId) == nil {
             return
         }
+        WindowRecoveryController.shared.forget(self)
         if !skipClosedWindowsCache { cacheClosedWindowIfNeeded() }
         let parent = unbindFromParent().parent
         let deadWindowWorkspace = parent.nodeWorkspace
@@ -235,11 +237,16 @@ final class MacWindow: Window {
         try await macApp.getAxSize(windowId)
     }
 
+    @MainActor
     override func setAxFrame(_ topLeft: CGPoint?, _ size: CGSize?) {
+        guard !WindowRecoveryController.shared.suppressAutomaticFrameWrites else { return }
+        WindowRecoveryController.shared.recordBeforeMutation(self, originalRect: lastKnownActualRect)
         macApp.setAxFrame(windowId, topLeft, size)
     }
 
+    @MainActor
     func setAxFrameBlocking(_ topLeft: CGPoint?, _ size: CGSize?) async throws {
+        WindowRecoveryController.shared.recordBeforeMutation(self, originalRect: lastKnownActualRect)
         try await macApp.setAxFrameBlocking(windowId, topLeft, size)
     }
 

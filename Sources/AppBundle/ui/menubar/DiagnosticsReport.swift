@@ -12,6 +12,7 @@ func buildDiagnosticsReport() async -> String {
     io.out("  active mode: \(activeMode ?? "none")")
     io.out("  default root layout: \(config.defaultRootContainerLayout)")
     io.out("  enabled: \(TrayMenuModel.shared.isEnabled)")
+    io.out("  crash recovery: \(WindowRecoveryController.shared.diagnosticSummary)")
     if !FileManager.default.fileExists(atPath: configUrl.path) {
         io.out("  file validation: WARNING — file is missing; running config retained")
     } else {

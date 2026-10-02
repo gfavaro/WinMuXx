@@ -383,6 +383,7 @@ enum OptimalHideCorner {
 
 @MainActor
 private func layoutWorkspaces() async throws {
+    if WindowRecoveryController.shared.suppressAutomaticFrameWrites { return }
     if !TrayMenuModel.shared.isEnabled {
         for workspace in Workspace.all {
             workspace.allLeafWindowsRecursive.forEach { window in
