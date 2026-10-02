@@ -18,6 +18,10 @@ final class WorkspaceCommandTest: XCTestCase {
         assertEquals(parseCommand("workspace --stdin foo").errorOrNil, "--stdin and --no-stdin require using (next|prev) argument")
         testParseCommandSucc("workspace --stdin next", WorkspaceCmdArgs(target: .relative(.next)).copy(\.explicitStdinFlag, true))
         testParseCommandSucc("workspace --no-stdin next", WorkspaceCmdArgs(target: .relative(.next)).copy(\.explicitStdinFlag, false))
+        XCTAssertEqual(parseCommand("workspace --monitor secondary 2").errorOrNil, nil)
+        XCTAssertEqual(parseCommand("workspace --name 9").errorOrNil, nil)
+        XCTAssertEqual(parseCommand("workspace --monitor main --name 9").errorOrNil, nil)
+        XCTAssertNil(parseCommand("workspace --monitor main --auto-back-and-forth 2").errorOrNil)
     }
 
     func testDirectWorkspaceFocusDoesNotCreateMissingWorkspace() async throws {
@@ -42,6 +46,114 @@ final class WorkspaceCommandTest: XCTestCase {
         assertEquals(result.exitCode, 0)
         XCTAssertEqual(focus.workspace.name, "2")
         XCTAssertEqual(workspaceDisplayName("2"), "Workspace 2")
+    }
+
+    func testHiddenWorkspaceSwitchUsesFocusedMonitorInsteadOfItsPreferredMonitor() async throws {
+        let main = TestMonitor(
+            monitorAppKitNsScreenScreensId: 1,
+            name: "Main",
+            rect: Rect(topLeftX: 0, topLeftY: 0, width: 1920, height: 1080),
+            visibleRect: Rect(topLeftX: 0, topLeftY: 0, width: 1920, height: 1080),
+            isMain: true,
+        )
+        let secondary = TestMonitor(
+            monitorAppKitNsScreenScreensId: 2,
+            name: "Secondary",
+            rect: Rect(topLeftX: 1920, topLeftY: 0, width: 1920, height: 1080),
+            visibleRect: Rect(topLeftX: 1920, topLeftY: 0, width: 1920, height: 1080),
+            isMain: false,
+        )
+        setMonitorsForTests([main, secondary])
+        defer { setMonitorsForTests(nil) }
+
+        let workspace1 = Workspace.get(byName: "1")
+        let workspace2 = Workspace.get(byName: "2")
+        let workspace5 = Workspace.get(byName: "5")
+        [workspace1, workspace2, workspace5].forEach { $0.markAsAutomaticallyNamed() }
+        config.persistentWorkspaces = ["2"]
+        workspace2.seedMonitorIfNeeded(secondary)
+        XCTAssertTrue(main.setActiveWorkspace(workspace5))
+        XCTAssertTrue(secondary.setActiveWorkspace(workspace1))
+        XCTAssertTrue(workspace5.focusWorkspace())
+
+        let result = try await parseCommand("workspace 2").cmdOrDie.run(.defaultEnv, .emptyStdin)
+
+        assertEquals(result.exitCode, 0)
+        XCTAssertTrue(main.activeWorkspace === workspace2)
+        XCTAssertTrue(secondary.activeWorkspace === workspace1)
+        XCTAssertTrue(focus.workspace === workspace2)
+    }
+
+    func testExplicitMonitorSwapsWorkspaceVisibleOnAnotherMonitor() async throws {
+        let main = TestMonitor(
+            monitorAppKitNsScreenScreensId: 1,
+            name: "Main",
+            rect: Rect(topLeftX: 0, topLeftY: 0, width: 1920, height: 1080),
+            visibleRect: Rect(topLeftX: 0, topLeftY: 0, width: 1920, height: 1080),
+            isMain: true,
+        )
+        let secondary = TestMonitor(
+            monitorAppKitNsScreenScreensId: 2,
+            name: "Secondary",
+            rect: Rect(topLeftX: 1920, topLeftY: 0, width: 1920, height: 1080),
+            visibleRect: Rect(topLeftX: 1920, topLeftY: 0, width: 1920, height: 1080),
+            isMain: false,
+        )
+        setMonitorsForTests([main, secondary])
+        defer { setMonitorsForTests(nil) }
+
+        let mainWorkspace = Workspace.get(byName: "main")
+        let secondaryWorkspace = Workspace.get(byName: "secondary")
+        XCTAssertTrue(main.setActiveWorkspace(mainWorkspace))
+        XCTAssertTrue(secondary.setActiveWorkspace(secondaryWorkspace))
+        XCTAssertTrue(mainWorkspace.focusWorkspace())
+
+        let result = try await parseCommand("workspace --monitor main --name secondary").cmdOrDie.run(.defaultEnv, .emptyStdin)
+
+        assertEquals(result.exitCode, 0)
+        XCTAssertTrue(main.activeWorkspace === secondaryWorkspace)
+        XCTAssertTrue(secondary.activeWorkspace === mainWorkspace)
+        XCTAssertEqual(focus.workspace, secondaryWorkspace)
+    }
+
+    func testExplicitMonitorResolvesDisplayIndexInThatMonitorsActiveProject() async throws {
+        let main = TestMonitor(
+            monitorAppKitNsScreenScreensId: 1,
+            name: "Main",
+            rect: Rect(topLeftX: 0, topLeftY: 0, width: 1920, height: 1080),
+            visibleRect: Rect(topLeftX: 0, topLeftY: 0, width: 1920, height: 1080),
+            isMain: true,
+        )
+        let secondary = TestMonitor(
+            monitorAppKitNsScreenScreensId: 2,
+            name: "Secondary",
+            rect: Rect(topLeftX: 1920, topLeftY: 0, width: 1920, height: 1080),
+            visibleRect: Rect(topLeftX: 1920, topLeftY: 0, width: 1920, height: 1080),
+            isMain: false,
+        )
+        setMonitorsForTests([main, secondary])
+        defer { setMonitorsForTests(nil) }
+
+        let mainWorkspace = Workspace.get(byName: "main")
+        let project = createWorkspaceProject()
+        let first = Workspace.get(byName: "secondary-one")
+        let second = Workspace.get(byName: "secondary-two")
+        [first, second].forEach {
+            $0.assignProject(project.id)
+            $0.markAsAutomaticallyNamed()
+        }
+        _ = TestWindow.new(id: 800, parent: first.rootTilingContainer)
+        _ = TestWindow.new(id: 801, parent: second.rootTilingContainer)
+        XCTAssertTrue(main.setActiveWorkspace(mainWorkspace))
+        XCTAssertTrue(secondary.setActiveWorkspace(first))
+        XCTAssertTrue(mainWorkspace.focusWorkspace())
+
+        let result = try await parseCommand("workspace 2 --monitor secondary").cmdOrDie.run(.defaultEnv, .emptyStdin)
+
+        assertEquals(result.exitCode, 0)
+        XCTAssertTrue(main.activeWorkspace === mainWorkspace)
+        XCTAssertTrue(secondary.activeWorkspace === second)
+        XCTAssertTrue(focus.workspace === second)
     }
 
     func testDirectWorkspaceFocusDoesNotSkipBlankNumericWorkspace() async throws {

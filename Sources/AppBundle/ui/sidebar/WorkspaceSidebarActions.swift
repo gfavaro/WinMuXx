@@ -5,10 +5,12 @@ import SwiftUI
 @MainActor
 func focusWorkspaceFromSidebar(_ workspaceName: String, targetMonitorScopeId: String? = nil) {
     WorkspaceSidebarPanel.suppressEdgeTrapForWorkspaceActivation()
-    optimisticallyMarkWorkspaceFocusedInSidebar(workspaceName)
+    optimisticallyMarkWorkspaceFocusedInSidebar(workspaceName, targetMonitorScopeId: targetMonitorScopeId)
     runWorkspaceSidebarSession {
         guard let workspace = Workspace.existing(byName: workspaceName) else { return }
-        _ = focusWorkspaceFromSidebar(workspace, targetMonitorScopeId: targetMonitorScopeId)
+        if !focusWorkspaceFromSidebar(workspace, targetMonitorScopeId: targetMonitorScopeId) {
+            showWorkspaceSidebarError("Monitor assignments prevent activating or swapping this workspace")
+        }
     }
 }
 
@@ -16,21 +18,31 @@ func focusWorkspaceFromSidebar(_ workspaceName: String, targetMonitorScopeId: St
 /// workspace on the same frame as the click. The session that follows rebuilds the real model
 /// (after an AX round-trip and title fetches) and corrects any difference.
 @MainActor
-private func optimisticallyMarkWorkspaceFocusedInSidebar(_ workspaceName: String) {
+private func optimisticallyMarkWorkspaceFocusedInSidebar(_ workspaceName: String, targetMonitorScopeId: String?) {
     let workspaces = TrayMenuModel.shared.workspaceSidebarWorkspaces
-    guard let target = workspaces.first(where: { $0.name == workspaceName }), !target.isFocused else { return }
+    guard let workspace = Workspace.existing(byName: workspaceName) else { return }
+    let monitor = targetMonitorScopeId.flatMap(workspaceSidebarMonitor(forScopeId:)) ?? focus.workspace.workspaceMonitor
+    guard isValidAssignment(workspace: workspace, screen: monitor.rect.topLeftCorner) else { return }
+    let outgoing = monitor.activeWorkspace
+    let source = workspace.visibleMonitor
+    let swapping = source.map { $0.rect.topLeftCorner != monitor.rect.topLeftCorner } ?? false
+    if swapping, let source, !isValidAssignment(workspace: outgoing, screen: source.rect.topLeftCorner) { return }
+    var visibleNames = Set(monitors.map { $0.activeWorkspace.name })
+    visibleNames.remove(outgoing.name)
+    visibleNames.insert(workspaceName)
+    if swapping { visibleNames.insert(outgoing.name) }
     TrayMenuModel.shared.workspaceSidebarWorkspaces = workspaces.map { w in
         let isFocused = w.name == workspaceName
-        let isVisible = w.monitorScopeId == target.monitorScopeId ? isFocused : w.isVisible
-        if isFocused == w.isFocused, isVisible == w.isVisible { return w }
+        let isVisible = visibleNames.contains(w.name)
+        let destination: Monitor? = isFocused ? monitor : (swapping && w.name == outgoing.name ? source : nil)
         return WorkspaceSidebarWorkspaceViewModel(
             name: w.name,
             projectId: w.projectId,
             displayName: w.displayName,
             sidebarLabel: w.sidebarLabel,
             isGeneratedName: w.isGeneratedName,
-            monitorScopeId: w.monitorScopeId,
-            monitorName: w.monitorName,
+            monitorScopeId: destination.map { workspaceSidebarMonitorScopeId(for: $0) } ?? w.monitorScopeId,
+            monitorName: destination?.name ?? w.monitorName,
             isFocused: isFocused,
             isVisible: isVisible,
             items: w.items,
@@ -41,21 +53,12 @@ private func optimisticallyMarkWorkspaceFocusedInSidebar(_ workspaceName: String
 
 @MainActor
 func focusWorkspaceFromSidebar(_ workspace: Workspace, targetMonitorScopeId: String? = nil) -> Bool {
-    guard let targetMonitorScopeId,
-          let targetMonitor = workspaceSidebarMonitor(forScopeId: targetMonitorScopeId)
-    else {
-        return workspace.focusWorkspace()
-    }
-
-    if workspace.isVisible {
-        guard workspace.workspaceMonitor.rect.topLeftCorner == targetMonitor.rect.topLeftCorner else {
-            return false
-        }
-        return workspace.focusWorkspace()
-    }
-
-    guard targetMonitor.setActiveWorkspace(workspace) else { return false }
-    return workspace.focusWorkspace()
+    let targetMonitor: Monitor
+    if let targetMonitorScopeId {
+        guard let monitor = workspaceSidebarMonitor(forScopeId: targetMonitorScopeId) else { return false }
+        targetMonitor = monitor
+    } else { targetMonitor = focus.workspace.workspaceMonitor }
+    return activateWorkspaceForUser(workspace, on: targetMonitor)
 }
 
 @MainActor
@@ -66,8 +69,9 @@ func overrideWorkspaceInUseFromSidebar(_ workspaceName: String, targetMonitorSco
               let targetMonitorScopeId,
               let targetMonitor = workspaceSidebarMonitor(forScopeId: targetMonitorScopeId)
         else { return }
-        _ = overrideWorkspaceOnMonitorBySwappingActiveViewports(workspace, targetMonitor: targetMonitor)
-        _ = workspace.focusWorkspace()
+        if !activateWorkspaceForUser(workspace, on: targetMonitor) {
+            showWorkspaceSidebarError("Monitor assignments prevent swapping these workspaces")
+        }
     }
 }
 

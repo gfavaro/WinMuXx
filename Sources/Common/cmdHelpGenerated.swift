@@ -166,6 +166,7 @@ let workspace_back_and_forth_help_generated = """
     USAGE: workspace-back-and-forth [-h|--help]
     """
 let workspace_help_generated = """
-    USAGE: workspace [-h|--help] [--auto-back-and-forth] [--fail-if-noop] <workspace-name>
-       OR: workspace [-h|--help] [--wrap-around] [--stdin|--no-stdin] (next|prev)
-    """
+    USAGE: workspace [-h|--help] [--monitor <monitor-pattern>] [--name <workspace-name>] [--auto-back-and-forth] [--fail-if-noop] <workspace-name>
+       OR: workspace [-h|--help] [--monitor <monitor-pattern>] [--wrap-around] [--stdin|--no-stdin] (next|prev)
+       OR: workspace [-h|--help] [--monitor <monitor-pattern>] --name <workspace-name>
+"""

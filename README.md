@@ -10,6 +10,18 @@
 https://github.com/user-attachments/assets/51983568-a168-494f-8ae3-5f50ca1efce1
 
 ## Highlights
+
+### Monitor-local workspace navigation
+
+`workspace` switches on the focused monitor. Selecting a workspace already
+visible on another monitor exchanges the two active workspaces; other monitors
+are unchanged. Fixed monitor assignments are checked before changing either
+viewport. `workspace-back-and-forth` uses each monitor's own history.
+
+Use `workspace --monitor secondary 2` to choose the destination explicitly, or
+`workspace --monitor main --name my-workspace` to select an internal workspace
+name rather than an automatic display index. Relative navigation skips workspaces
+visible on other monitors. Sidebar selections use their selected monitor scope.
 ### Projects
 Projects are collection of workspaces. Think of it like a parent/child hiearchy, you can switch between projects. Each project has it's own set of workspaces.
 

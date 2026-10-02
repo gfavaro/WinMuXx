@@ -52,43 +52,11 @@ func overrideWorkspaceOnMonitorBySwappingActiveViewports(_ workspace: Workspace,
         return true
     }
 
-    let sourceReplacement = nearestWorkspaceForOverrideSourceMonitor(
-        excluding: workspace,
-        sourceMonitor: sourceMonitor,
-        targetMonitor: targetMonitor,
-    )
-    if let sourceReplacement {
-        _ = winMuxWorkspaceState.setActiveWorkspace(sourceReplacement, on: MonitorViewportId(sourceMonitor))
-    } else {
-        let fallback = createBlankWorkspace(projectId: workspace.projectId, monitor: sourceMonitor)
-        _ = winMuxWorkspaceState.setActiveWorkspace(fallback, on: MonitorViewportId(sourceMonitor))
+    guard winMuxWorkspaceState.swapActiveWorkspaces(between: MonitorViewportId(sourceMonitor), and: MonitorViewportId(targetMonitor)) else {
+        return false
     }
-    _ = winMuxWorkspaceState.setActiveWorkspace(workspace, on: MonitorViewportId(targetMonitor))
     checkWorkspaceHierarchyInvariants()
     return true
-}
-
-@MainActor
-func nearestWorkspaceForOverrideSourceMonitor(
-    excluding workspace: Workspace,
-    sourceMonitor: Monitor,
-    targetMonitor: Monitor,
-) -> Workspace? {
-    let candidates = orderedWorkspacesForPresentation()
-        .filter { candidate in
-            candidate.projectId == workspace.projectId &&
-                candidate != workspace &&
-                !candidate.isArchived &&
-                isValidAssignment(workspace: candidate, screen: sourceMonitor.rect.topLeftCorner) &&
-                (!candidate.isVisible || candidate.workspaceMonitor.rect.topLeftCorner == targetMonitor.rect.topLeftCorner)
-        }
-    guard let workspaceIndex = orderedWorkspacesForPresentation().firstIndex(of: workspace) else {
-        return candidates.first
-    }
-    return candidates.min {
-        abs((orderedWorkspacesForPresentation().firstIndex(of: $0) ?? Int.max) - workspaceIndex) <
-            abs((orderedWorkspacesForPresentation().firstIndex(of: $1) ?? Int.max) - workspaceIndex)
-    }
 }
 
 @MainActor
@@ -199,6 +167,8 @@ func rearrangeWorkspacesOnMonitors() {
         if let existingVisibleWorkspace,
            newScreen.setActiveWorkspace(existingVisibleWorkspace)
         {
+            // Restoring a viewport is not a user switch: retain its local navigation history.
+            winMuxWorkspaceState.monitorViewportsById[newMonitor]?.previousWorkspaceId = preservedViewport?.previousWorkspaceId
             continue
         }
         let projectId = existingVisibleWorkspace?.projectId ?? workspaceProjectDefaultId

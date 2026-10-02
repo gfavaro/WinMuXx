@@ -36,5 +36,6 @@ func createAdjacentTransientBlankWorkspaceIfAllowed(named workspaceName: String,
     let workspace = Workspace.get(byName: nextSidebarCreatedWorkspaceName(projectId: current.projectId, monitor: current.workspaceMonitor))
     workspace.markAsTransientBlank()
     workspace.assignProject(current.projectId)
+    workspace.seedMonitorIfNeeded(current.workspaceMonitor)
     return workspace
 }

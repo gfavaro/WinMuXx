@@ -7,16 +7,50 @@ struct WorkspaceCommand: Command {
     /*conforms*/ let shouldResetClosedWindowsCache = true
 
     func run(_ env: CmdEnv, _ io: CmdIo) -> Bool {
-        guard let target = args.resolveTargetOrReportError(env, io) else { return false }
-        let focusedWs = target.workspace
-        switch resolveWorkspaceTarget(from: focusedWs, io: io) {
+        let focusedMonitor = focus.workspace.workspaceMonitor
+        let activationMonitor: Monitor
+        if let description = args.monitorDescription {
+            guard let resolved = description.resolveMonitor(sortedMonitors: sortedMonitors) else {
+                return io.err("No monitor matches '\(description)'")
+            }
+            activationMonitor = resolved
+        } else {
+            activationMonitor = focusedMonitor
+        }
+        let commandTarget = args.monitorDescription == nil ? args.resolveTargetOrReportError(env, io) : nil
+        guard args.monitorDescription != nil || commandTarget != nil else { return false }
+        let resolutionWorkspace = commandTarget?.workspace ?? activationMonitor.activeWorkspace
+        if let requestedName = args.internalName {
+            guard let named = Workspace.existing(byName: requestedName.raw), named.projectId == resolutionWorkspace.projectId else {
+                return io.err("Workspace '\(requestedName.raw)' doesn't exist in the active project")
+            }
+            if args.autoBackAndForth && named == activationMonitor.activeWorkspace {
+                return activatePreviousWorkspace(on: activationMonitor)
+            }
+            return activateWorkspace(named, on: activationMonitor, io: io)
+        }
+        let focusedWs = resolutionWorkspace
+        switch resolveWorkspaceTarget(from: focusedWs, on: activationMonitor, io: io) {
             case .focus(let workspace):
-                return focusOrReportNoop(workspace, focusedWorkspace: focusedWs, io: io, failIfNoop: args.failIfNoop)
+                return activateWorkspace(workspace, on: activationMonitor, io: io)
             case .backAndForth:
-                return WorkspaceBackAndForthCommand(args: WorkspaceBackAndForthCmdArgs(rawArgs: [])).run(env, io)
+                return activatePreviousWorkspace(on: activationMonitor)
             case .error:
                 return false
         }
+    }
+
+    @MainActor
+    private func activateWorkspace(_ workspace: Workspace, on monitor: Monitor, io: CmdIo) -> Bool {
+        if workspace == focus.workspace && workspace.visibleMonitor?.rect.topLeftCorner == monitor.rect.topLeftCorner {
+            if args.failIfNoop { return false }
+            io.err("Workspace '\(workspaceDisplayName(workspace.name))' is already focused. Tip: use --fail-if-noop to exit with non-zero code")
+            return true
+        }
+        guard activateWorkspaceForUser(workspace, on: monitor) else {
+            return io.err("Can't activate workspace '\(workspace.name)' on monitor '\(monitor.name)': monitor assignment prevents activation or swapping")
+        }
+        return true
     }
 
     private enum ResolvedWorkspaceTarget {
@@ -26,7 +60,7 @@ struct WorkspaceCommand: Command {
     }
 
     @MainActor
-    private func resolveWorkspaceTarget(from focusedWs: Workspace, io: CmdIo) -> ResolvedWorkspaceTarget {
+    private func resolveWorkspaceTarget(from focusedWs: Workspace, on monitor: Monitor, io: CmdIo) -> ResolvedWorkspaceTarget {
         switch args.target.val {
             case .relative(let nextPrev):
                 guard let workspace = getNextPrevWorkspace(
@@ -34,6 +68,7 @@ struct WorkspaceCommand: Command {
                     isNext: nextPrev == .next,
                     wrapAround: args.wrapAround,
                     stdin: args.useStdin ? io.readStdin() : nil,
+                    on: monitor,
                 )
                     ?? createNextTransientBlankWorkspaceIfAllowed(
                         from: focusedWs,
@@ -171,8 +206,11 @@ private func resolveRelativeWorkspaceNavigation(
 }
 
 @MainActor
-func getNextPrevWorkspace(current: Workspace, isNext: Bool, wrapAround: Bool, stdin: String?) -> Workspace? {
-    let workspaces = resolveRelativeWorkspaceCandidates(current: current, stdin: stdin)
+func getNextPrevWorkspace(current: Workspace, isNext: Bool, wrapAround: Bool, stdin: String?, on monitor: Monitor? = nil) -> Workspace? {
+    let workspaces = resolveRelativeWorkspaceCandidates(current: current, stdin: stdin).filter { workspace in
+        guard let monitor else { return true }
+        return workspace == current || workspaceIsAvailableForMonitor(workspace, monitor: monitor)
+    }
     guard !workspaces.isEmpty else { return nil }
 
     let navigation = resolveRelativeWorkspaceNavigation(

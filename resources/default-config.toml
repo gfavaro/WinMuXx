@@ -14,6 +14,13 @@ default-root-container-orientation = 'auto'
 
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 
+# Workspace switches target the focused monitor unless --monitor is specified.
+# Selecting a workspace visible elsewhere exchanges the two active workspaces.
+# Fixed assignments below can prevent a switch or exchange; nothing changes on failure.
+# [workspace-to-monitor-force-assignment]
+#     "1" = 'main'
+#     "2" = 'secondary'
+
 automatically-unhide-macos-hidden-apps = false
 automatically-tile-new-windows = true
 # Shake a window horizontally while dragging its title bar to toggle floating/tiling.

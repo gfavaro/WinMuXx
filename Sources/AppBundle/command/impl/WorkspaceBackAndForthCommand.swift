@@ -6,6 +6,14 @@ struct WorkspaceBackAndForthCommand: Command {
     /*conforms*/ let shouldResetClosedWindowsCache = true
 
     func run(_ env: CmdEnv, _ io: CmdIo) -> Bool {
-        prevFocusedWorkspace?.focusWorkspace() ?? false
+        activatePreviousWorkspace(on: focus.workspace.workspaceMonitor)
     }
+}
+
+@MainActor
+func activatePreviousWorkspace(on monitor: Monitor) -> Bool {
+    guard let previousId = winMuxWorkspaceState.monitorViewportsById[MonitorViewportId(monitor)]?.previousWorkspaceId,
+          let workspace = winMuxWorkspaceState.workspaceById[previousId], !workspace.isArchived,
+          workspace != monitor.activeWorkspace else { return false }
+    return activateWorkspaceForUser(workspace, on: monitor)
 }

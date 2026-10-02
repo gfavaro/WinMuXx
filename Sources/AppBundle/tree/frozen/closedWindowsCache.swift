@@ -100,10 +100,8 @@ func restoreFrozenWorldIfNeeded(_ frozenWorld: FrozenWorld, newlyDetectedWindow:
         let workspace = Workspace.get(byName: frozenWorkspace.name)
         workspace.assignProject(frozenWorkspace.projectId)
         workspace.restoreNamingStyle(frozenWorkspace.namingStyle)
+        workspace.preferredMonitorPoint = frozenWorkspace.monitor.topLeftCorner
         let frozenWindowById = collectFrozenWindows(frozenWorkspace)
-        _ = topLeftCornerToMonitor[frozenWorkspace.monitor.topLeftCorner]?
-            .singleOrNil()?
-            .setActiveWorkspace(workspace)
         for frozenWindow in frozenWorkspace.floatingWindows {
             if let window = Window.get(byId: frozenWindow.id) {
                 applyFrozenWindowState(window, frozenWindow)
@@ -141,7 +139,9 @@ func restoreFrozenWorldIfNeeded(_ frozenWorld: FrozenWorld, newlyDetectedWindow:
         } else {
             targetWorkspace = getOrCreateMonitorViewportFallbackWorkspace(for: targetMonitor)
         }
-        _ = targetMonitor.setActiveWorkspace(targetWorkspace)
+        if targetMonitor.activeWorkspace != targetWorkspace {
+            _ = targetMonitor.setActiveWorkspace(targetWorkspace)
+        }
     }
     return true
 }

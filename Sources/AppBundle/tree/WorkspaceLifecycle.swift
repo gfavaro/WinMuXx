@@ -45,7 +45,7 @@ func getOrCreateAdjacentBlankWorkspace(projectId: WorkspaceProjectId, monitor: M
     let scope = WorkspaceScope(projectId: projectId)
     if let workspaceId = retainedEmptyWorkspaceId(in: scope),
        let workspace = winMuxWorkspaceState.workspaceById[workspaceId],
-       isValidAssignment(workspace: workspace, screen: monitor.rect.topLeftCorner)
+       workspaceIsAvailableForMonitor(workspace, monitor: monitor)
     {
         return workspace
     }
@@ -274,6 +274,30 @@ func availablePreferredWorkspace(projectId: WorkspaceProjectId, monitor: Monitor
 func workspaceIsAvailableForMonitor(_ workspace: Workspace, monitor: Monitor) -> Bool {
     isValidAssignment(workspace: workspace, screen: monitor.rect.topLeftCorner) &&
         (!workspace.isVisible || workspace.workspaceMonitor.rect.topLeftCorner == monitor.rect.topLeftCorner)
+}
+
+@MainActor
+@discardableResult
+func activateWorkspaceForUser(
+    _ workspace: Workspace,
+    on targetMonitor: Monitor,
+) -> Bool {
+    guard isValidAssignment(workspace: workspace, screen: targetMonitor.rect.topLeftCorner) else {
+        return false
+    }
+
+    if workspace.isVisible {
+        let visibleMonitor = workspace.visibleMonitor
+        guard let visibleMonitor else { return false }
+        if visibleMonitor.rect.topLeftCorner != targetMonitor.rect.topLeftCorner {
+            guard overrideWorkspaceOnMonitorBySwappingActiveViewports(workspace, targetMonitor: targetMonitor) else { return false }
+            return workspace.focusWorkspace()
+        }
+        return workspace.focusWorkspace()
+    }
+
+    guard targetMonitor.setActiveWorkspace(workspace) else { return false }
+    return workspace.focusWorkspace()
 }
 
 @MainActor
