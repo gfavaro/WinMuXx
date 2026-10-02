@@ -77,6 +77,8 @@ extension TreeNode {
                 switch container.layout {
                     case .tiles:
                         try await container.layoutTiles(point, width: width, height: height, virtual: virtual, context)
+                    case .dwindle:
+                        try await container.layoutDwindle(point, width: width, height: height, virtual: virtual, context)
                     case .tabGroup:
                         try await container.layoutTabGroup(point, width: width, height: height, virtual: virtual, context)
                 }
@@ -187,6 +189,43 @@ extension TilingContainer {
             )
             virtualPoint = orientation == .h ? virtualPoint.addingXOffset(child.hWeight) : virtualPoint.addingYOffset(child.vWeight)
             point = orientation == .h ? point.addingXOffset(child.hWeight) : point.addingYOffset(child.vWeight)
+        }
+    }
+
+    @MainActor
+    fileprivate func layoutDwindle(_ point: CGPoint, width: CGFloat, height: CGFloat, virtual: Rect, _ context: LayoutContext) async throws {
+        guard !children.isEmpty else { return }
+        var currentPoint = point
+        var currentVirtual = virtual
+        var currentWidth = width
+        var currentHeight = height
+
+        for (index, child) in children.enumerated() {
+            let last = index == children.indices.last
+            let splitOrientation: Orientation = currentWidth >= currentHeight ? .h : .v
+            let splitLength = splitOrientation == .h ? currentWidth : currentHeight
+            let gap = last ? 0 : CGFloat(context.resolvedGaps.inner.get(splitOrientation).toDouble())
+            let childLength = last ? splitLength : max(splitLength * 0.5 - gap / 2, 0)
+            let childWidth = splitOrientation == .h ? childLength : currentWidth
+            let childHeight = splitOrientation == .v ? childLength : currentHeight
+            try await child.layoutRecursive(
+                currentPoint,
+                width: childWidth,
+                height: childHeight,
+                virtual: Rect(topLeftX: currentVirtual.topLeftX, topLeftY: currentVirtual.topLeftY, width: childWidth, height: childHeight),
+                context,
+            )
+            if splitOrientation == .h {
+                let consumed = childWidth + gap
+                currentPoint = currentPoint.addingXOffset(consumed)
+                currentVirtual = currentVirtual.copy(\.topLeftX, currentVirtual.topLeftX + consumed)
+                currentWidth -= consumed
+            } else {
+                let consumed = childHeight + gap
+                currentPoint = currentPoint.addingYOffset(consumed)
+                currentVirtual = currentVirtual.copy(\.topLeftY, currentVirtual.topLeftY + consumed)
+                currentHeight -= consumed
+            }
         }
     }
 

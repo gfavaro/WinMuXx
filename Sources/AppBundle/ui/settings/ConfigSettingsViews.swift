@@ -46,7 +46,8 @@ struct ShortcutBehaviorSettingsView: View {
                 SettingsToggle("Reload config when it changes", isOn: $autoReloadConfig, help: "Apply valid edits saved from another editor automatically.") { persistRootBool("auto-reload-config", autoReloadConfig) }
             }
             SettingsSection("Default layout") {
-                SettingsPicker("Root layout", selection: $defaultLayout, help: "Used for new workspaces.") {
+                SettingsPicker("Root layout", selection: $defaultLayout, help: "Used for new workspaces. Selecting Dwindle also updates existing tiled workspaces.") {
+                    Text("Dwindle").tag(Layout.dwindle)
                     Text("Tiles").tag(Layout.tiles)
                     Text("Tab group").tag(Layout.tabGroup)
                 } onChange: { persistRootString("default-root-container-layout", defaultLayout.rawValue) }

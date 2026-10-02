@@ -58,6 +58,7 @@ extension TilingContainer {
 enum Layout: String, Codable {
     case tiles
     case tabGroup = "tab-group"
+    case dwindle
 }
 
 extension String {

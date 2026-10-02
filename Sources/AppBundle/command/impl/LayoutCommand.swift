@@ -24,6 +24,8 @@ struct LayoutCommand: Command {
                 return changeTilingLayout(io, targetLayout: .tiles, targetOrientation: .v, window: window)
             case .tabGroup:
                 return changeTilingLayout(io, targetLayout: .tabGroup, targetOrientation: nil, window: window)
+            case .dwindle:
+                return changeTilingLayout(io, targetLayout: .dwindle, targetOrientation: nil, window: window)
             case .tiles:
                 return changeTilingLayout(io, targetLayout: .tiles, targetOrientation: nil, window: window)
             case .horizontal:
@@ -72,6 +74,7 @@ extension Window {
     fileprivate func matchesDescription(_ layout: LayoutCmdArgs.LayoutDescription) -> Bool {
         return switch layout {
             case .tabGroup:   (parent as? TilingContainer)?.layout == .tabGroup
+            case .dwindle:    (parent as? TilingContainer)?.layout == .dwindle
             case .tiles:       (parent as? TilingContainer)?.layout == .tiles
             case .horizontal:  (parent as? TilingContainer)?.orientation == .h
             case .vertical:    (parent as? TilingContainer)?.orientation == .v

@@ -45,9 +45,7 @@ import Foundation
         let didLoadPersistedFrozenWorld = loadPersistedFrozenWorldForStartupIfPresent()
         try await runRefreshSessionBlocking(.startup, layoutWorkspaces: false)
         try await runLightSession(.startup, .forceRun) {
-            if !didLoadPersistedFrozenWorld {
-                smartLayoutAtStartup()
-            }
+            applyStartupWindowLayout(restoredWorld: didLoadPersistedFrozenWorld)
             _ = try await config.afterStartupCommand.runCmdSeq(.defaultEnv, .emptyStdin)
         }
         isWinMuxRuntimeReady = true
@@ -60,7 +58,12 @@ import Foundation
 }
 
 @MainActor
-private func smartLayoutAtStartup() {
+func applyStartupWindowLayout(restoredWorld: Bool) {
+    if config.defaultRootContainerLayout == .dwindle {
+        if applyDwindleToExistingTiledWorkspaces() { syncClosedWindowsCacheToCurrentWorld() }
+        return
+    }
+    guard !restoredWorld else { return }
     let workspace = focus.workspace
     let root = workspace.rootTilingContainer
     if root.children.count <= 3 {

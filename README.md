@@ -10,6 +10,15 @@
 https://github.com/user-attachments/assets/51983568-a168-494f-8ae3-5f50ca1efce1
 
 ## Highlights
+
+### Dwindle layout
+
+Set `default-root-container-layout = 'dwindle'` to split tiled space recursively.
+New windows split the focused tiled window; existing tiled roots are updated at
+startup and when the configured default changes to dwindle. Floating windows and
+explicit tab groups are preserved. Use `layout dwindle` for a manual selection.
+An unrelated config reload does not replace a manually selected layout. The
+default remains `tiles`.
 ### Projects
 Projects are collection of workspaces. Think of it like a parent/child hiearchy, you can switch between projects. Each project has it's own set of workspaces.
 
