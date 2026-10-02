@@ -84,7 +84,7 @@ final class WorkspaceCommandTest: XCTestCase {
         XCTAssertTrue(focus.workspace === workspace2)
     }
 
-    func testExplicitMonitorSwapsWorkspaceVisibleOnAnotherMonitor() async throws {
+    func testExplicitMonitorFocusesWorkspaceVisibleOnAnotherMonitorWithoutMovingIt() async throws {
         let main = TestMonitor(
             monitorAppKitNsScreenScreensId: 1,
             name: "Main",
@@ -111,8 +111,8 @@ final class WorkspaceCommandTest: XCTestCase {
         let result = try await parseCommand("workspace --monitor main --name secondary").cmdOrDie.run(.defaultEnv, .emptyStdin)
 
         assertEquals(result.exitCode, 0)
-        XCTAssertTrue(main.activeWorkspace === secondaryWorkspace)
-        XCTAssertTrue(secondary.activeWorkspace === mainWorkspace)
+        XCTAssertTrue(main.activeWorkspace === mainWorkspace)
+        XCTAssertTrue(secondary.activeWorkspace === secondaryWorkspace)
         XCTAssertEqual(focus.workspace, secondaryWorkspace)
     }
 

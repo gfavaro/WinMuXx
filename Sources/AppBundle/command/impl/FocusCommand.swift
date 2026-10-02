@@ -18,6 +18,11 @@ struct FocusCommand: Command {
         switch args.target {
             case .direction(let direction):
                 let window = target.windowOrNil
+                if target.workspace.rootTilingContainer.layout == .dwindle,
+                   let window,
+                   let neighbor = dwindleDirectionalFocusTarget(from: window, direction: direction) {
+                    return neighbor.focusWindow()
+                }
                 if let (parent, ownIndex) = window?.closestParent(hasChildrenInDirection: direction, withLayout: nil) {
                     guard let windowToFocus = parent.children[ownIndex + direction.focusOffset]
                         .findLeafWindowRecursive(snappedTo: direction.opposite) else { return false }

@@ -12,6 +12,16 @@ struct MoveCommand: Command {
             return io.err(noWindowIsFocused)
         }
         let currentNode = currentWindow.moveNode
+        if currentWindow.nodeWorkspace?.rootTilingContainer.layout == .dwindle,
+           let neighbor = dwindleDirectionalFocusTarget(
+               from: currentWindow,
+               direction: direction,
+               excludingMoveNode: currentNode,
+           )
+        {
+            swapNodes(currentNode, neighbor.moveNode)
+            return true
+        }
         guard let parent = currentNode.parent else { return false }
         switch parent.cases {
             case .tilingContainer(let parent):

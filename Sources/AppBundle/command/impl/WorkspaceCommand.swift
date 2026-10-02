@@ -42,13 +42,13 @@ struct WorkspaceCommand: Command {
 
     @MainActor
     private func activateWorkspace(_ workspace: Workspace, on monitor: Monitor, io: CmdIo) -> Bool {
-        if workspace == focus.workspace && workspace.visibleMonitor?.rect.topLeftCorner == monitor.rect.topLeftCorner {
+        if workspace == focus.workspace && workspace.visibleMonitor != nil {
             if args.failIfNoop { return false }
             io.err("Workspace '\(workspaceDisplayName(workspace.name))' is already focused. Tip: use --fail-if-noop to exit with non-zero code")
             return true
         }
         guard activateWorkspaceForUser(workspace, on: monitor) else {
-            return io.err("Can't activate workspace '\(workspace.name)' on monitor '\(monitor.name)': monitor assignment prevents activation or swapping")
+            return io.err("Can't activate workspace '\(workspace.name)' on monitor '\(monitor.name)': monitor assignment prevents activation")
         }
         return true
     }
