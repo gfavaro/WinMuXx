@@ -51,4 +51,5 @@ jobs:
         with:
           name: WinMux-GF-${{ github.run_number }}
           path: .release/WinMux-GF-*.zip
+          include-hidden-files: true
           if-no-files-found: error
