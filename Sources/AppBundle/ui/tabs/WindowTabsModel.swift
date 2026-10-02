@@ -2,6 +2,7 @@ import AppKit
 
 @MainActor
 func updateWindowTabModel() async {
+    WindowBorderController.shared.refresh()
     let didClearMouseInteractionChromeSuppression =
         WindowTabStripPanelController.shared.clearMouseInteractionChromeSuppressionIfInactive()
     guard TrayMenuModel.shared.isEnabled, config.windowTabs.enabled else {
