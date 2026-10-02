@@ -80,6 +80,22 @@ extension TreeNodeTest {
         XCTAssertTrue(frozenWorld.workspaces.isEmpty)
     }
 
+    func testSnapshotAndRestorePreservesConfiguredEmptyWorkspace() async throws {
+        config.persistentWorkspaces = ["persistent-empty"]
+        let persistent = Workspace.get(byName: "persistent-empty")
+        let frozenWorld = snapshotCurrentFrozenWorld()
+
+        XCTAssertEqual(frozenWorld.workspaces.map(\.name), [persistent.name])
+        XCTAssertTrue(frozenWorld.windowIds.isEmpty)
+
+        removeWorkspaceFromRegistry(persistent)
+        let trigger = TestWindow.new(id: 33, parent: focus.workspace.rootTilingContainer)
+        let didRestore = try await restoreFrozenWorldIfNeeded(frozenWorld, newlyDetectedWindow: trigger)
+
+        XCTAssertTrue(didRestore)
+        XCTAssertNotNil(Workspace.existing(byName: persistent.name))
+    }
+
     func testRestoreFrozenWorldIfNeededUsesNativeFallbackWorkspaceForMissingVisibleWorkspace() async throws {
         let occupiedWorkspace = Workspace.get(byName: "occupied")
         let window = TestWindow.new(id: 31, parent: occupiedWorkspace.rootTilingContainer)

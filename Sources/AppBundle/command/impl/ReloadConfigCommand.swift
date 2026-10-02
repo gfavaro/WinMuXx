@@ -39,6 +39,7 @@ struct ReloadConfigCommand: Command {
                 resetHotKeys()
                 config = parsedConfig
                 configUrl = url
+                materializePersistedWorkspaces()
                 applyUpdatedDefaultWindowLayout(previousLayout: previousRootLayout)
                 try await activateMode(activeMode)
                 syncStartAtLogin()

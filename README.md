@@ -11,66 +11,24 @@ https://github.com/user-attachments/assets/51983568-a168-494f-8ae3-5f50ca1efce1
 
 ## Highlights
 
-### Manual crash recovery
-
-After an interrupted session, the menu can offer Recover Windows from Previous
-Session. WinMux records original geometry before moving managed windows, in a
-separate `recovery-journal.json` under its Application Support directory. The
-journal is not the saved managed layout and does not store window titles.
-
-Recovery requires confirmation, pauses tiling and validates app/process launch
-identity before restoring frames. It skips disconnected displays, minimized
-and native-fullscreen windows; entries whose restoration fails remain available.
-Enable resumes tiling. Nothing is recovered automatically and no native Spaces
-are manipulated. Corrupt/unsupported journals or files owned by another live
-session are preserved and reported in Diagnostics. No new TOML options are needed.
-
 ### Menu-bar actions and diagnostics
 
-Click the menu-bar icon for window, layout, workspace, project and monitor
-commands. Shortcut labels use the effective bindings of the active mode; actions
-without a configured shortcut remain blank and clickable. Custom command chains,
-modifier taps and key sequences appear under Other Key Bindings when needed.
-The menu refreshes on every opening and does not create new global shortcuts.
+Click the WinMux menu-bar icon to browse window, layout, workspace, project and monitor actions.
+Shortcuts come from the effective configuration for the active mode, and the menu updates whenever
+it opens. Actions without shortcuts remain clickable. Custom command chains, modifier taps and
+key sequences are available under **Other Key Bindings** when not represented by a catalog action.
 
-Choose Diagnostics to inspect the loaded config path and validity, permissions,
-monitors, potential window-manager conflicts and per-app accessibility latency.
-Refresh and Copy Diagnostics share the report used by `winmux doctor`. Checks
-do not modify macOS settings or stop other apps. Reports include local paths
-and app names; review them before sharing. No additional TOML options are required.
+Choose **Diagnostics…** to inspect the loaded config path, file validation, effective default layout,
+permissions, monitors, potentially conflicting window managers and per-app accessibility latency.
+The window offers **Refresh** and **Copy Diagnostics**; `winmux doctor` uses the same report generator.
+Checks do not change macOS preferences or stop other apps. Review local paths and app names before
+sharing a report. Upcoming improvements are tracked in [the roadmap](docs/ROADMAP.md).
 
-### Monitor-local workspace navigation
-
-`workspace` switches on the focused monitor. Selecting a workspace already
-visible on another monitor exchanges the two active workspaces; other monitors
-are unchanged. Fixed monitor assignments are checked before changing either
-viewport. `workspace-back-and-forth` uses each monitor's own history.
-
-Use `workspace --monitor secondary 2` to choose the destination explicitly, or
-`workspace --monitor main --name my-workspace` to select an internal workspace
-name rather than an automatic display index. Relative navigation skips workspaces
-visible on other monitors. Sidebar selections use their selected monitor scope.
-
-### Dwindle layout
-
-Set `default-root-container-layout = 'dwindle'` to split tiled space recursively.
-New windows split the focused tiled window; existing tiled roots are updated at
-startup and when the configured default changes to dwindle. Floating windows and
-explicit tab groups are preserved. Use `layout dwindle` for a manual selection.
-An unrelated config reload does not replace a manually selected layout. The
-default remains `tiles`.
-
-### Optional window borders
-
-Enable built-in, click-through borders with `borders.enabled = true`. The
-configuration follows [Dinky's border options](https://github.com/mikker/Dinky/blob/main/docs/configuration.md#borders):
-width in points, active/inactive colors (`#RRGGBB` or `#RRGGBBAA`), order
-(`below` or `above`) and excluded application bundle IDs. Borders track visible
-managed windows and focus, and hide with their windows/fullscreen chrome.
-
-Borders are disabled by default. Settings apply on config reload. If you use
-JankyBorders, remove its startup command and stop the external `borders` process
-before enabling WinMux borders; WinMux does not stop other processes for you.
+After an interrupted session, the menu can offer **Recover N Windows from Previous Session…**.
+Recovery pauses tiling and restores the original positions and sizes recorded before WinMux moved
+the windows. It validates the owning app's process and launch identity, skips disconnected displays
+and native fullscreen/minimized windows, and retains failed entries for another attempt. Choose
+**Enable** to resume tiling. The recovery journal is separate from the saved managed layout.
 
 ### Projects
 Projects are collection of workspaces. Think of it like a parent/child hiearchy, you can switch between projects. Each project has it's own set of workspaces.
@@ -118,6 +76,25 @@ The sidebar clock can be configured independently:
 the month and day, and the weekday; for example, `show-date = false` with
 `show-weekday = true` leaves a weekday-only calendar label in the expanded sidebar.
 
+### Window borders
+
+WinMux draws click-through borders around visible managed windows, with a different color for the
+focused window. The settings follow [Dinky's `[borders]` configuration](https://github.com/mikker/Dinky/blob/main/docs/configuration.md#borders):
+
+```toml
+[borders]
+    enabled = true
+    width = 4                     # Points; fractional values are supported.
+    active-color = '#e1e3e4'       # #RRGGBB or #RRGGBBAA.
+    inactive-color = '#494d64'
+    order = 'below'               # 'above' draws the ring over the window.
+    exclude-apps = []             # Application bundle IDs.
+```
+
+Changes apply on config reload. Borders hide with their windows and in fullscreen. If you previously
+started JankyBorders in `after-startup-command`, remove that command and stop the external `borders`
+process to avoid drawing two sets of borders.
+
 ### Window and sidebar spacing
 
 The `[gaps]` settings control the visible borders around tiled windows. `inner.horizontal`
@@ -146,6 +123,11 @@ Unlike stack-only layouts, WinMux tab groups behave more intuitively like you wo
 
 #### Automatic tiling
 
+With `default-root-container-layout = 'dwindle'`, existing tiled windows also use dwindle at startup,
+including tiled roots restored from older saved state. Switching the default to dwindle while WinMux
+is running updates existing tiled roots on config reload. Floating windows and tab groups are preserved;
+manual layout choices made afterward remain active during ordinary refreshes and unrelated config edits.
+
 WinMux tiles newly discovered windows by default. To keep their existing macOS size and position while still using WinMux's sidebar, workspaces, and manual layout commands, disable automatic tiling:
 
 ```toml
@@ -161,7 +143,23 @@ enable-shake-to-toggle-tiling = false
 ```
 
 #### Workspaces
-You can NOT create workspaces that have no windows in them. Workspaces with no windows are automatically destroyed.
+Empty workspaces are collected when no longer needed, but configured persistent workspaces and the active viewport
+workspace can remain empty. Numeric workspace arguments are display positions; use `workspace --name <name>` to
+select an internal workspace name directly.
+
+Workspace activation can target a monitor explicitly:
+
+```shell
+winmux workspace 2 --monitor secondary
+winmux workspace --name 9
+```
+
+Workspace commands activate on the focused monitor unless `--monitor` specifies another display.
+Selecting a workspace already visible elsewhere swaps the two displays' active workspaces and focuses
+the destination display. Both assignments must respect `workspace-to-monitor-force-assignment`.
+`workspace next` and `workspace prev` skip workspaces visible on other displays; numbering stays
+project-wide. `workspace-back-and-forth` and `--auto-back-and-forth` use each display's own history.
+Clicking a sidebar activates on that sidebar's display using the same swap policy.
 
 ### Multi-Monitors
 Monitors share the global project/workspace state. Each monitor can be treated as *independent* from each other. They each just use the sidebar to browse through projects and 'select' a workspace to view. 

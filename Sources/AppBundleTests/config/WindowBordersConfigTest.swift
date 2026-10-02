@@ -20,14 +20,14 @@ final class WindowBordersConfigTest: XCTestCase {
         XCTAssertEqual(config.windowBorders.excludeApps, ["com.apple.finder", "com.mitchellh.ghostty"])
     }
 
-    func testDefaultStyleMatchesDinkyButBordersAreOptInAndZeroWidthIsAccepted() {
+    func testDefaultsMatchDinkyAndZeroWidthIsAccepted() {
         let (config, errors) = parseConfig("[borders]\nwidth = 0")
         XCTAssertTrue(errors.isEmpty)
         XCTAssertEqual(config.windowBorders.width, 0)
         XCTAssertEqual(config.windowBorders.activeColor, "#E1E3E4")
         XCTAssertEqual(config.windowBorders.inactiveColor, "#494D64")
         XCTAssertEqual(config.windowBorders.order, .below)
-        XCTAssertFalse(config.windowBorders.enabled)
+        XCTAssertTrue(config.windowBorders.enabled)
     }
 
     func testInvalidBorderSettingsAreRejected() {

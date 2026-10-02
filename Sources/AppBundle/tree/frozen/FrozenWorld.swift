@@ -16,7 +16,7 @@ func snapshotCurrentFrozenWorld() -> FrozenWorld {
 
 @MainActor
 func restorableWorkspaces(_ workspaces: [Workspace]) -> [Workspace] {
-    workspaces.filter { !collectAllWindowIds(workspace: $0).isEmpty }
+    workspaces.filter { !collectAllWindowIds(workspace: $0).isEmpty || $0.isConfiguredPersistent }
 }
 
 @MainActor

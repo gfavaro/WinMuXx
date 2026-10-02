@@ -64,6 +64,7 @@ final class Workspace: TreeNode, NonLeafTreeNodeObject, Hashable, Comparable {
 
     @MainActor
     static func reconcileWorkspaceState() {
+        materializePersistedWorkspaces()
         for workspace in winMuxWorkspaceState.workspaceById.values {
             workspace.refreshEmptyLifecycle()
         }

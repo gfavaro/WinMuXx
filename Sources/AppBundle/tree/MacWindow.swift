@@ -3,6 +3,19 @@ import Common
 
 final class MacWindow: Window {
     let macApp: MacApp
+    @MainActor private(set) var learnedMinimum = LearnedWindowMinimum()
+    @MainActor private var minimumObservation: Task<Void, Never>?
+    @MainActor private var frameRequestGeneration: UInt64 = 0
+    @MainActor private var minimumRequest: (point: CGPoint?, size: CGSize?)?
+
+    @MainActor
+    func resetLearnedMinimum() {
+        frameRequestGeneration &+= 1
+        minimumObservation?.cancel()
+        minimumObservation = nil
+        minimumRequest = nil
+        learnedMinimum = LearnedWindowMinimum()
+    }
     private var prevUnhiddenProportionalPositionInsideWorkspaceRect: CGPoint?
     /// The corner the window is parked in, together with the monitor rect it was parked
     /// against: when the monitor's geometry changes (or the workspace moves to another
@@ -94,6 +107,7 @@ final class MacWindow: Window {
             return
         }
         WindowRecoveryController.shared.forget(self)
+        resetLearnedMinimum()
         if !skipClosedWindowsCache { cacheClosedWindowIfNeeded() }
         let parent = unbindFromParent().parent
         let deadWindowWorkspace = parent.nodeWorkspace
@@ -242,10 +256,52 @@ final class MacWindow: Window {
         guard !WindowRecoveryController.shared.suppressAutomaticFrameWrites else { return }
         WindowRecoveryController.shared.recordBeforeMutation(self, originalRect: lastKnownActualRect)
         macApp.setAxFrame(windowId, topLeft, size)
+        // Reasserting an unchanged layout must neither flood AX with observations nor
+        // continually cancel the confirmation already waiting for that same request.
+        if let previous = minimumRequest, previous.point == topLeft, previous.size == size { return }
+        minimumRequest = (topLeft, size)
+        frameRequestGeneration &+= 1
+        minimumObservation?.cancel()
+        guard let topLeft, let size, parent is TilingContainer, !isFullscreen,
+              TrayMenuModel.shared.isEnabled, lastKnownActualRect?.size != size else { return }
+        let generation = frameRequestGeneration
+        minimumObservation = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: 150_000_000)
+                guard let self, self.canObserveMinimum(generation) else { return }
+                let fullscreen = try await self.isMacosFullscreen
+                let minimized = try await self.isMacosMinimized
+                guard !fullscreen, !minimized,
+                      let first = try await self.macApp.getAxRect(self.windowId) else { return }
+                try await Task.sleep(nanoseconds: 150_000_000)
+                guard self.canObserveMinimum(generation),
+                      let confirmed = try await self.macApp.getAxRect(self.windowId),
+                      self.canObserveMinimum(generation),
+                      abs(first.topLeftCorner.x - topLeft.x) <= 2,
+                      abs(first.topLeftCorner.y - topLeft.y) <= 2,
+                      abs(confirmed.topLeftCorner.x - topLeft.x) <= 2,
+                      abs(confirmed.topLeftCorner.y - topLeft.y) <= 2 else { return }
+                self.learnedMinimum.observe(requested: size, first: first.size, confirmed: confirmed.size)
+            } catch {
+                // Cancellation, closed windows and failed AX reads are not minimum-size evidence.
+            }
+        }
+    }
+
+    @MainActor
+    private func canObserveMinimum(_ generation: UInt64) -> Bool {
+        !Task.isCancelled && frameRequestGeneration == generation &&
+            MacWindow.allWindowsMap[windowId] === self && parent is TilingContainer &&
+            !isFullscreen && TrayMenuModel.shared.isEnabled &&
+            !WindowRecoveryController.shared.isRecovering &&
+            !WindowRecoveryController.shared.suppressAutomaticFrameWrites
     }
 
     @MainActor
     func setAxFrameBlocking(_ topLeft: CGPoint?, _ size: CGSize?) async throws {
+        frameRequestGeneration &+= 1
+        minimumObservation?.cancel()
+        minimumRequest = nil
         WindowRecoveryController.shared.recordBeforeMutation(self, originalRect: lastKnownActualRect)
         try await macApp.setAxFrameBlocking(windowId, topLeft, size)
     }

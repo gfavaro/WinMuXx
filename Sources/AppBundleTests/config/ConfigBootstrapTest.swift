@@ -157,7 +157,7 @@ final class ConfigBootstrapTest: XCTestCase {
         XCTAssertTrue(didMaterialize)
         let migratedText = try String(contentsOf: targetUrl, encoding: .utf8)
         XCTAssertTrue(migratedText.contains("# Migrated from AeroSpace config by WinMux."))
-        XCTAssertTrue(migratedText.contains("default-root-container-layout = 'tiles'"))
+        XCTAssertTrue(migratedText.contains("default-root-container-layout = 'dwindle'"))
         XCTAssertTrue(migratedText.contains("tab-group-padding = 30"))
         XCTAssertTrue(migratedText.contains("window-tabs.enabled = true"))
         XCTAssertTrue(migratedText.contains("[workspace-sidebar]"))

@@ -34,6 +34,7 @@ func setUpWorkspacesForTests() {
     config.enableNormalizationFlattenContainers = false // Make layout tests more predictable
     config.enableNormalizationOppositeOrientationForNestedContainers = false // Make layout tests more predictable
     config.defaultRootContainerOrientation = .horizontal // Make default layout predictable
+    config.defaultRootContainerLayout = .tiles // Keep tree tests focused on their explicit layout behavior
 
     // Don't create any bindings and workspaces for tests
     config.modes = [mainModeId: Mode(bindings: [:], tapBindings: [:])]

@@ -86,10 +86,10 @@ func syncClosedWindowsCacheToCurrentWorld() {
 
 @MainActor
 func restoreFrozenWorldIfNeeded(_ frozenWorld: FrozenWorld, newlyDetectedWindow: Window) async throws -> Bool {
-    if !frozenWorld.windowIds.contains(newlyDetectedWindow.windowId) {
+    if !frozenWorld.windowIds.isEmpty && !frozenWorld.windowIds.contains(newlyDetectedWindow.windowId) {
         return false
     }
-    guard frozenWorld.workspaces.contains(where: { collectFrozenWindows($0)[newlyDetectedWindow.windowId] != nil }) else {
+    guard frozenWorld.windowIds.isEmpty || frozenWorld.workspaces.contains(where: { collectFrozenWindows($0)[newlyDetectedWindow.windowId] != nil }) else {
         return false
     }
     let monitors = monitors

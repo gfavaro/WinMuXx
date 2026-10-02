@@ -1,48 +1,45 @@
 config-version = 2
 
-# The menu shows shortcuts from the active mode; unconfigured actions remain blank.
-# Diagnostics reports the loaded config path. Menu and diagnostics need no extra options.
-# Crash recovery is an explicit menu action after an interrupted session; no TOML option.
-# Optional startup/focus callbacks; empty lists preserve the default behavior.
-after-startup-command = []
-on-focus-changed = []
-# after-login-command is deprecated; use start-at-login and after-startup-command.
+# This is the reference configuration, not your personal config.
+# Use the menu's Open Config / Diagnostics actions to locate the loaded file.
+# Menu actions display only shortcuts configured for the active mode.
+# Diagnostics, manual crash recovery and session-local minimum-size observation
+# do not require additional TOML options. Learned minima do not constrain layout yet.
 
 start-at-login = false
+after-startup-command = []
+# after-login-command is deprecated; use start-at-login and after-startup-command.
 auto-reload-config = true
 enable-normalization-flatten-containers = true
 enable-normalization-opposite-orientation-for-nested-containers = true
 tab-group-padding = 30
 
+# Native tab-group chrome. Height is measured in points.
 window-tabs.enabled = true
 window-tabs.height = 36
 
-# Built-in, click-through borders. Opt in with enabled = true.
-# Stop JankyBorders and remove its startup command to avoid drawing two borders.
-borders.enabled = false
-# Points; fractional widths are supported. Zero hides borders.
+# Built-in, click-through window borders. Do not also start JankyBorders
+# in after-startup-command: stop the external borders process to avoid duplicates.
+borders.enabled = true
+# Width in points; fractional values are supported.
 borders.width = 4
 # Colors accept #RRGGBB or #RRGGBBAA.
 borders.active-color = '#e1e3e4'
 borders.inactive-color = '#494d64'
-# Draw immediately 'below' or 'above' the managed window.
+# 'below' draws behind the window; 'above' draws over it.
 borders.order = 'below'
-# Application bundle IDs, e.g. ['com.apple.finder'].
+# Exclude applications by bundle ID, e.g. ['com.apple.finder'].
 borders.exclude-apps = []
 
-# Also accepts 'dwindle' for recursive splits; no keyboard shortcut is required.
-# Selecting dwindle updates existing tiled roots at startup and when this setting changes.
-default-root-container-layout = 'tiles'
+# Dwindle splits space recursively when windows are tiled; no layout shortcut is needed.
+default-root-container-layout = 'dwindle'
 default-root-container-orientation = 'auto'
 
+on-focus-changed = []
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
-
-# Workspace switches target the focused monitor unless --monitor is specified.
-# Selecting a workspace visible elsewhere exchanges the two active workspaces.
-# Fixed assignments below can prevent a switch or exchange; nothing changes on failure.
-# [workspace-to-monitor-force-assignment]
-#     "1" = 'main'
-#     "2" = 'secondary'
+# Workspace commands target the focused monitor unless --monitor is specified.
+# If the target workspace is visible elsewhere, the monitors exchange workspaces,
+# provided any workspace-to-monitor-force-assignment rules permit it.
 
 automatically-unhide-macos-hidden-apps = false
 automatically-tile-new-windows = true
@@ -69,6 +66,8 @@ on-mode-changed = []
 
 [workspace-sidebar]
     enabled = true
+    # Offer a 'Focused' monitor scope in the sidebar's monitor selector.
+    enable-focus = false
     # Hide the compact rail until the pointer reaches the display's left edge.
     auto-hide = false
     # Keep the full sidebar open and reserve its width for tiled windows.
@@ -78,6 +77,7 @@ on-mode-changed = []
     # Omit monitor to show an independent sidebar on every display.
     # Legacy monitor = 'main' is also treated as all displays for this sidebar.
     # Use monitor = 1, 'secondary', 2, or a list to restrict it.
+    # monitor = [1, 'secondary']
     menu-bar-reserve-height = 28
     project-deletion-action = 'close-windows'
     show-status-pills = true
@@ -97,6 +97,16 @@ on-mode-changed = []
 
 [workspace-sidebar.project-colors]
     "default" = "#C4B5FD"
+
+# Optional display labels; keys are internal workspace names.
+# [workspace-sidebar.workspace-labels]
+#     "1" = "Terminal"
+#     "2" = "Editor"
+
+# Optional fixed monitor assignments. Leave commented for focused-monitor navigation.
+# [workspace-to-monitor-force-assignment]
+#     "1" = 'main'
+#     "2" = 'secondary'
 
 [mode.main.binding]
     ctrl-f = 'open-sidebar'

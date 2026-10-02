@@ -85,6 +85,17 @@ func materializePersistedWorkspaceProjects() {
 }
 
 @MainActor
+func materializePersistedWorkspaces() {
+    for rawName in config.persistentWorkspaces {
+        let name = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { continue }
+        let workspace = Workspace.get(byName: name)
+        workspace.assignProject(workspace.projectId)
+        workspace.lifecycle = .durable
+    }
+}
+
+@MainActor
 func ensureMinimumWorkspaceForAllProjects(monitor: Monitor = mainMonitor) {
     for projectId in winMuxWorkspaceState.projectsById.keys {
         ensureMinimumWorkspace(for: projectId, monitor: monitor)

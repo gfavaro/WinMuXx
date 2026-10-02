@@ -133,6 +133,9 @@ final class NativeActionMenu: NSObject, NSMenuDelegate {
         menu.addItem(callbackItem("Copy Version", #selector(copyVersion)))
         menu.addItem(callbackItem("Open Config", #selector(openConfig)))
         menu.addItem(callbackItem("Diagnostics…", #selector(openDiagnostics)))
+        if MacWindow.allWindows.contains(where: { !$0.learnedMinimum.isEmpty }) {
+            menu.addItem(callbackItem("Reset Learned Minimum Sizes…", #selector(resetMinimumSizes)))
+        }
         let recoverableCount = WindowRecoveryController.shared.recoverableEntries.count
         if recoverableCount > 0 {
             let item = callbackItem("Recover \(recoverableCount) Windows from Previous Session…", #selector(recoverWindows))
@@ -233,6 +236,15 @@ final class NativeActionMenu: NSObject, NSMenuDelegate {
         NSWorkspace.shared.open(findCustomConfigUrl().urlOrNil ?? ((try? ensureBootstrapConfigExistsIfNeeded()) ?? preferredEditableConfigUrl()))
     }
     @objc private func openDiagnostics() { DiagnosticsWindowController.shared.show() }
+    @objc private func resetMinimumSizes() {
+        let alert = NSAlert()
+        alert.messageText = "Reset learned minimum window sizes?"
+        alert.informativeText = "This clears session-local observations only. Window positions and your configuration are unchanged."
+        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: "Reset")
+        guard alert.runModal() == .alertSecondButtonReturn else { return }
+        for window in MacWindow.allWindows { window.resetLearnedMinimum() }
+    }
     @objc private func recoverWindows() {
         let alert = NSAlert()
         alert.messageText = "Recover windows from a previous session?"

@@ -43,6 +43,28 @@ final class ConfigTest: XCTestCase {
         XCTAssertFalse(config.workspaceSidebar.showDate)
         XCTAssertTrue(config.workspaceSidebar.showWeekday)
         XCTAssertTrue(config.enableShakeToToggleTiling)
+        XCTAssertEqual(config.defaultRootContainerLayout, .dwindle)
+        XCTAssertFalse(config.workspaceSidebar.enableFocus)
+        XCTAssertTrue(config.afterStartupCommand.isEmpty)
+        XCTAssertTrue(config.onFocusChanged.isEmpty)
+        XCTAssertTrue(config.workspaceToMonitorForceAssignment.isEmpty)
+        XCTAssertTrue(config.workspaceSidebar.workspaceLabels.isEmpty)
+        XCTAssertEqual(config.windowBorders, WindowBordersConfig())
+    }
+
+    func testReferenceConfigCommentedMonitorAndLabelExamples() {
+        let (_, errors) = parseConfig("""
+        config-version = 2
+        [workspace-sidebar]
+        monitor = [1, 'secondary']
+        [workspace-sidebar.workspace-labels]
+        "1" = "Terminal"
+        "2" = "Editor"
+        [workspace-to-monitor-force-assignment]
+        "1" = 'main'
+        "2" = 'secondary'
+        """)
+        assertEquals(errors, [])
     }
 
     func testParseAutomaticallyTileNewWindows() {

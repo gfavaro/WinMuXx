@@ -5,7 +5,7 @@ import TOMLKit
 enum WindowBorderOrder: String { case below, above }
 
 struct WindowBordersConfig: ConvenienceCopyable, Equatable {
-    var enabled = false
+    var enabled = true
     var width = 4.0
     var activeColor = "#E1E3E4"
     var inactiveColor = "#494D64"

@@ -207,6 +207,18 @@ final class TreeNodeTest: XCTestCase {
         XCTAssertTrue(Workspace.all.contains(workspace))
     }
 
+    func testReconcileMaterializesConfiguredPersistentWorkspaceWithoutChangingViewport() {
+        let active = focus.workspace
+        config.persistentWorkspaces = ["keep-empty"]
+
+        Workspace.reconcileWorkspaceState()
+
+        let persistent = Workspace.existing(byName: "keep-empty")
+        XCTAssertNotNil(persistent)
+        XCTAssertTrue(persistent?.isConfiguredPersistent == true)
+        XCTAssertTrue(mainMonitor.activeWorkspace === active)
+    }
+
     func testReconcileWorkspaceStateKeepsFreshFocusedEmptyWorkspace() {
         let workspace = Workspace.get(byName: "draft")
         workspace.markAsSidebarManaged()

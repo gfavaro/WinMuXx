@@ -13,6 +13,12 @@ func buildDiagnosticsReport() async -> String {
     io.out("  default root layout: \(config.defaultRootContainerLayout)")
     io.out("  enabled: \(TrayMenuModel.shared.isEnabled)")
     io.out("  crash recovery: \(WindowRecoveryController.shared.diagnosticSummary)")
+    let learned = MacWindow.allWindows.filter { !$0.learnedMinimum.isEmpty }
+    io.out("  learned minimum sizes: \(learned.count) windows (session-local; observation only)")
+    for window in learned.sorted(by: { $0.windowId < $1.windowId }) {
+        let minimum = window.learnedMinimum.size
+        io.out("    window \(window.windowId): width=\(minimum.width) height=\(minimum.height)pt (0 = unknown)")
+    }
     if !FileManager.default.fileExists(atPath: configUrl.path) {
         io.out("  file validation: WARNING — file is missing; running config retained")
     } else {

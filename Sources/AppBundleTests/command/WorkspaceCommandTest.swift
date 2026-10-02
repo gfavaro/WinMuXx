@@ -436,7 +436,7 @@ final class WorkspaceCommandTest: XCTestCase {
         XCTAssertNil(Workspace.existing(byName: "2"))
     }
 
-    func testDirectWorkspaceFocusDoesNotCreateConfiguredPersistentWorkspace() async throws {
+    func testDirectWorkspaceFocusMaterializesConfiguredPersistentWorkspaceAfterRefresh() async throws {
         config.persistentWorkspaces = ["2"]
 
         let result = try await WorkspaceCommand(
@@ -444,7 +444,7 @@ final class WorkspaceCommandTest: XCTestCase {
         ).run(.defaultEnv, .emptyStdin)
 
         assertEquals(result.exitCode, 1)
-        XCTAssertNil(Workspace.existing(byName: "2"))
+        XCTAssertNotNil(Workspace.existing(byName: "2"))
     }
 
     func testDirectWorkspaceFocusIgnoresWorkspaceWithOnlyMacosFullscreenWindows() async throws {
