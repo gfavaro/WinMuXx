@@ -119,12 +119,7 @@ extension WorkspaceSidebarPanel {
 
     func visibleScreenRectNormalized() -> Rect? {
         guard isVisible, viewModel.workspaceSidebarVisibleWidth > 0 else { return nil }
-        return CGRect(
-            x: frame.minX,
-            y: frame.minY,
-            width: min(viewModel.workspaceSidebarVisibleWidth, frame.width),
-            height: frame.height,
-        ).monitorFrameNormalized()
+        return workspaceSidebarVisibleFrame(panel: frame, width: viewModel.workspaceSidebarVisibleWidth, position: config.workspaceSidebar.position).monitorFrameNormalized()
     }
 }
 extension WorkspaceSidebarPanel {
@@ -181,9 +176,11 @@ extension WorkspaceSidebarPanel {
             return
         }
 
-        let deltaX = previous.map { sample.point.x - $0.point.x } ?? 0
+        let direction: CGFloat = config.workspaceSidebar.position == .left ? 1 : -1
+        let edgeX = config.workspaceSidebar.position == .left ? layoutMonitor.rect.minX : layoutMonitor.rect.maxX
+        let deltaX = previous.map { (sample.point.x - $0.point.x) * direction } ?? 0
         let isLeftwardFlick = deltaX <= -edgeTrapReleaseVelocityThreshold
-        let isContinuingTrap = edgeTrapStartedAt != nil && sample.point.x <= layoutMonitor.rect.minX + edgeTrapBandWidth
+        let isContinuingTrap = edgeTrapStartedAt != nil && (sample.point.x - edgeX) * direction <= edgeTrapBandWidth
         let shouldTrap = isContinuingTrap || isLeftwardFlick || isMouseWindowDragInProgress()
         guard shouldTrap else {
             debugWorkspaceSidebarEdgeTrapLog("skipVelocity panel=\(monitorScopeId) deltaX=\(deltaX) isLeftwardFlick=\(isLeftwardFlick) isContinuingTrap=\(isContinuingTrap)")
@@ -201,7 +198,7 @@ extension WorkspaceSidebarPanel {
         }
 
         let trappedPoint = CGPoint(
-            x: layoutMonitor.rect.minX + 1,
+            x: edgeX + direction,
             y: sample.point.y.coerce(in: layoutMonitor.rect.minY ... max(layoutMonitor.rect.minY, layoutMonitor.rect.maxY - 1))
         )
         debugWorkspaceSidebarEdgeTrapLog("warp panel=\(monitorScopeId) from=\(sample.point) to=\(trappedPoint) deltaX=\(deltaX) isLeftwardFlick=\(isLeftwardFlick) isContinuingTrap=\(isContinuingTrap) elapsed=\(sample.timestamp - startedAt) monitorFrame=\(layoutMonitor.rect)")
@@ -211,37 +208,25 @@ extension WorkspaceSidebarPanel {
 
     private func hasMonitorImmediatelyLeft(of monitor: Monitor) -> Bool {
         sortedMonitors.contains { other in
-            other.rect.maxX == monitor.rect.minX &&
+            (config.workspaceSidebar.position == .left ? other.rect.maxX == monitor.rect.minX : other.rect.minX == monitor.rect.maxX) &&
                 other.rect.maxY > monitor.rect.minY &&
                 other.rect.minY < monitor.rect.maxY
         }
     }
 
-    private func isInsideVerticalSpan(_ point: CGPoint, of monitor: Monitor) -> Bool {
-        point.y >= monitor.rect.minY && point.y < monitor.rect.maxY
-    }
-
     private func crossesLeftEdgeTrapRegion(point: CGPoint, previous: CGPoint?, of monitor: Monitor) -> Bool {
-        if isInsideVerticalSpan(point, of: monitor),
-           point.x >= monitor.rect.minX - edgeTrapBandWidth,
-           point.x <= monitor.rect.minX + edgeTrapBandWidth
-        {
-            return true
-        }
+        let direction: CGFloat = config.workspaceSidebar.position == .left ? 1 : -1
+        let edge = config.workspaceSidebar.position == .left ? monitor.rect.minX : monitor.rect.maxX
+        let x = (point.x - edge) * direction
+        let span = frame.monitorFrameNormalized()
+        if point.y >= span.minY, point.y < span.maxY, abs(x) <= edgeTrapBandWidth { return true }
         guard let previous else { return false }
-        let crossedLeftEdge = previous.x >= monitor.rect.minX && point.x < monitor.rect.minX
-        let crossedBackIntoMonitor = previous.x < monitor.rect.minX && point.x >= monitor.rect.minX
-        let crossedTrapBand = previous.x > monitor.rect.minX + edgeTrapBandWidth &&
-            point.x < monitor.rect.minX - edgeTrapBandWidth
-        guard crossedLeftEdge || crossedBackIntoMonitor || crossedTrapBand else { return false }
-        return segmentIntersectsVerticalSpan(from: previous, to: point, of: monitor)
+        let previousX = (previous.x - edge) * direction
+        let crossed = (previousX >= 0 && x < 0) || (previousX < 0 && x >= 0) || (previousX > edgeTrapBandWidth && x < -edgeTrapBandWidth)
+        return crossed && max(previous.y, point.y) >= span.minY && min(previous.y, point.y) < span.maxY
     }
 
-    private func segmentIntersectsVerticalSpan(from start: CGPoint, to end: CGPoint, of monitor: Monitor) -> Bool {
-        let minY = min(start.y, end.y)
-        let maxY = max(start.y, end.y)
-        return maxY >= monitor.rect.minY && minY < monitor.rect.maxY
-    }
+
 }
 
 struct WorkspaceSidebarPanelLayout {
@@ -268,14 +253,9 @@ extension WorkspaceSidebarPanel {
         let collapsedWidth = workspaceSidebarRestingWidth(sidebarConfig)
         guard expandedWidth > 0, collapsedWidth >= 0 else { return nil }
 
-        let menuBarReserveHeight = min(CGFloat(sidebarConfig.menuBarReserveHeight), max(screen.frame.height - 1, 0))
+        let menuBarHeight = max(screen.frame.maxY - screen.visibleFrame.maxY, screen.safeAreaInsets.top, NSStatusBar.system.thickness)
         return WorkspaceSidebarPanelLayout(
-            frame: NSRect(
-                x: screen.frame.minX,
-                y: screen.frame.minY,
-                width: maximumExpandedWidth,
-                height: screen.frame.height - menuBarReserveHeight,
-            ),
+            frame: workspaceSidebarPanelFrame(screen: screen.frame, menuBarHeight: menuBarHeight, config: sidebarConfig, contentHeight: measuredContentHeight > 0 ? measuredContentHeight : screen.frame.height * 0.6),
             expandedWidth: expandedWidth,
             collapsedWidth: collapsedWidth,
         )
@@ -604,7 +584,7 @@ extension WorkspaceSidebarPanel {
             viewModel.workspaceSidebarVisibleWidth,
             workspaceSidebarHoverActivationWidth(config.workspaceSidebar),
         ) + hoverExitTolerance
-        let hoverRegion = NSRect(x: frame.minX, y: frame.minY, width: hoverWidth, height: frame.height)
+        let hoverRegion = workspaceSidebarVisibleFrame(panel: frame, width: hoverWidth, position: config.workspaceSidebar.position)
         let inside = hoverRegion.contains(NSEvent.mouseLocation)
         if viewModel.workspaceSidebarVisibleWidth > workspaceSidebarRestingWidth(config.workspaceSidebar) + 0.5 || pendingCollapse != nil {
             debugWorkspaceSidebarHoverLog("hoverRegion panel=\(monitorScopeId) inside=\(inside) hoverWidth=\(hoverWidth) visibleWidth=\(viewModel.workspaceSidebarVisibleWidth) frame=\(frame) mouse=\(NSEvent.mouseLocation) suppressUntil=\(splitBrowseCollapseSuppressedUntil)")
@@ -614,20 +594,15 @@ extension WorkspaceSidebarPanel {
 
     func isMouseInsideVisibleRegion() -> Bool {
         guard isVisible else { return false }
-        let visibleRegion = NSRect(
-            x: frame.minX,
-            y: frame.minY,
-            width: viewModel.workspaceSidebarVisibleWidth,
-            height: frame.height,
-        )
+        let visibleRegion = workspaceSidebarVisibleFrame(panel: frame, width: viewModel.workspaceSidebarVisibleWidth, position: config.workspaceSidebar.position)
         return visibleRegion.contains(NSEvent.mouseLocation)
     }
 
     func isMouseDeepEnoughToExpand() -> Bool {
         guard isVisible else { return false }
         return isWorkspaceSidebarHoverDeepEnoughToExpand(
-            mouseX: NSEvent.mouseLocation.x,
-            sidebarMinX: frame.minX,
+            mouseX: config.workspaceSidebar.position == .left ? NSEvent.mouseLocation.x : -NSEvent.mouseLocation.x,
+            sidebarMinX: config.workspaceSidebar.position == .left ? frame.minX : -frame.maxX,
             collapsedWidth: workspaceSidebarHoverActivationWidth(config.workspaceSidebar),
         )
     }
@@ -703,6 +678,19 @@ extension WorkspaceSidebarPanel {
         viewModel.setIfChanged(\.workspaceSidebarVisibleWidth, 0)
         if isVisible {
             orderOut(nil)
+        }
+    }
+}
+
+extension WorkspaceSidebarPanel {
+    func updateMeasuredContentHeight(_ height: CGFloat) {
+        guard config.workspaceSidebar.heightMode == .centered, height.isFinite, height > 0,
+              abs(measuredContentHeight - height) > 1 else { return }
+        measuredContentHeight = ceil(height)
+        // Preference delivery occurs during layout; defer AppKit resizing to avoid reentry.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let monitor = sortedMonitors.first(where: { workspaceSidebarMonitorScopeId(for: $0) == self.monitorScopeId }) else { return }
+            self.refresh(on: monitor)
         }
     }
 }

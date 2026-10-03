@@ -37,6 +37,7 @@ struct WorkspaceSidebarWallpaperRequest: Sendable, Hashable {
     let fillRed: Double
     let fillGreen: Double
     let fillBlue: Double
+    var position: WorkspaceSidebarPosition = .left
 
     func imageRect(imageSize: CGSize, canvas: CGSize) -> CGRect {
         let sx = canvas.width / imageSize.width
@@ -125,7 +126,7 @@ actor WorkspaceSidebarWallpaperAnalyzer {
             var green = 0.0
             var blue = 0.0
             for y in 0..<height {
-                for x in 0..<sampleWidth {
+                for x in (request.position == .left ? 0 : width - sampleWidth)..<(request.position == .left ? sampleWidth : width) {
                     let offset = (y * width + x) * 4
                     red += Double(data[offset]) / 255
                     green += Double(data[offset + 1]) / 255
@@ -167,7 +168,7 @@ struct WorkspaceSidebarWallpaperContrast: ViewModifier {
         content
             .environment(\.colorScheme, resolvedColorScheme)
             .environment(\.workspaceSidebarWallpaperSample, samplingEnabled ? expandedSample : nil)
-            .task(id: "\(samplingEnabled)-\(snapshot.targetMonitorScopeId)-\(snapshot.configuration.collapsedWidth)-\(snapshot.configuration.expandedWidth)-\(snapshot.configuration.frostedTint == .automatic)") {
+            .task(id: "\(samplingEnabled)-\(snapshot.targetMonitorScopeId)-\(snapshot.configuration.collapsedWidth)-\(snapshot.configuration.expandedWidth)-\(snapshot.configuration.position.rawValue)-\(snapshot.configuration.frostedTint == .automatic)") {
                 compactSample = nil
                 expandedSample = nil
                 guard samplingEnabled else { return }
@@ -206,7 +207,8 @@ struct WorkspaceSidebarWallpaperContrast: ViewModifier {
             sidebarWidth: width,
             scaling: (options[.imageScaling] as? NSNumber)?.uintValue ?? NSImageScaling.scaleProportionallyUpOrDown.rawValue,
             allowClipping: options[.allowClipping] as? Bool ?? true,
-            fillRed: fill.redComponent, fillGreen: fill.greenComponent, fillBlue: fill.blueComponent
+            fillRed: fill.redComponent, fillGreen: fill.greenComponent, fillBlue: fill.blueComponent,
+            position: snapshot.configuration.position
         )
     }
 }

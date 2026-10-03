@@ -137,7 +137,8 @@ struct ShortcutAppearanceSettingsView: View {
     @State private var collapsedWidth = config.workspaceSidebar.collapsedWidth
     @State private var tabEnabled = config.windowTabs.enabled
     @State private var tabHeight = max(36, config.windowTabs.height)
-    @State private var menuBarReserveHeight = config.workspaceSidebar.menuBarReserveHeight
+    @State private var sidebarPosition = config.workspaceSidebar.position
+    @State private var sidebarHeightMode = config.workspaceSidebar.heightMode ?? .standard
     @State private var innerHorizontalGap = settingsConstantValue(config.gaps.inner.horizontal)
     @State private var innerVerticalGap = settingsConstantValue(config.gaps.inner.vertical)
     @State private var outerLeftGap = settingsConstantValue(config.gaps.outer.left)
@@ -210,7 +211,16 @@ struct ShortcutAppearanceSettingsView: View {
                     }
                 } onChange: { sidebarInt("collapsed-width", collapsedWidth) }
                 .disabled(!sidebarEnabled || sidebarDisplayMode == .expanded)
-                SettingsStepper("Top clearance", value: $menuBarReserveHeight, range: 0...72, help: "Space above the sidebar in points. Use 0 to extend it to the top edge, for example with an automatically hidden menu bar.") { sidebarInt("menu-bar-reserve-height", menuBarReserveHeight) }
+                SettingsPicker("Sidebar position", selection: $sidebarPosition, help: "Choose the display edge. Windows reserve space on the selected side.") {
+                    Text("Left").tag(WorkspaceSidebarPosition.left)
+                    Text("Right").tag(WorkspaceSidebarPosition.right)
+                } onChange: { persist("workspace-sidebar", "position", "'\(sidebarPosition.rawValue)'") }
+                .disabled(!sidebarEnabled)
+                SettingsPicker("Sidebar height", selection: $sidebarHeightMode, help: "Standard and Full fill the safe height below the menu bar. Centered fits content up to 90% of that height. The menu bar always stays clear.") {
+                    Text("Standard").tag(WorkspaceSidebarHeightMode.standard)
+                    Text("Centered").tag(WorkspaceSidebarHeightMode.centered)
+                    Text("Full").tag(WorkspaceSidebarHeightMode.full)
+                } onChange: { persist("workspace-sidebar", "height-mode", "'\(sidebarHeightMode.rawValue)'") }
                 .disabled(!sidebarEnabled)
 
             }

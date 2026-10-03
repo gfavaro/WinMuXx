@@ -83,6 +83,10 @@ final class WorkspaceSidebarWallpaperContrastTest: XCTestCase {
         let analyzer = WorkspaceSidebarWallpaperAnalyzer()
         let tone = await analyzer.tone(for: request(url: url))
         XCTAssertEqual(tone, .dark)
+        var rightRequest = request(url: url)
+        rightRequest.position = .right
+        let rightTone = await analyzer.tone(for: rightRequest)
+        XCTAssertEqual(rightTone, .light)
         let cached = await analyzer.tone(for: request(url: url))
         XCTAssertEqual(cached, .dark)
         let profile = await analyzer.profile(for: request(url: url))

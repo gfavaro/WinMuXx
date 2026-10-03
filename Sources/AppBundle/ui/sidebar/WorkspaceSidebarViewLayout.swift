@@ -116,7 +116,7 @@ extension WorkspaceSidebarView {
                     NotificationCenter.default.post(name: workspaceSidebarDismissProjectMenusNotification, object: nil)
                 }
         }
-        .overlay(alignment: .trailing) {
+        .overlay(alignment: snapshot.configuration.position == .left ? .trailing : .leading) {
             Rectangle()
                 .fill(sidebarColors.separator)
                 .frame(width: 0.5)

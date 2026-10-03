@@ -7,7 +7,8 @@ struct ShortcutGeneralView: View {
     @ObservedObject var model: ShortcutSettingsModel
     @State private var displayStyle = ExperimentalUISettings().displayStyle
     @State private var iconAppearance = ExperimentalUISettings().iconAppearance
-    @State private var workspaceSidebarMenuBarReserveHeight = config.workspaceSidebar.menuBarReserveHeight
+    @State private var sidebarPosition = config.workspaceSidebar.position
+    @State private var sidebarHeightMode = config.workspaceSidebar.heightMode ?? .standard
     @State private var projectDeletionAction = config.workspaceSidebar.projectDeletionAction
 
     var body: some View {
@@ -78,29 +79,19 @@ struct ShortcutGeneralView: View {
                             }
                         }
 
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Sidebar menu bar space")
-                                Text("Use 0 px when the macOS menu bar auto-hides.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Text("\(workspaceSidebarMenuBarReserveHeight) px")
-                                .font(.system(size: 12, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                                .frame(width: 48, alignment: .trailing)
-                            Stepper(
-                                "",
-                                value: $workspaceSidebarMenuBarReserveHeight,
-                                in: 0 ... 72,
-                                step: 1,
-                            )
-                            .labelsHidden()
-                            .onChange(of: workspaceSidebarMenuBarReserveHeight) { newValue in
-                                setWorkspaceSidebarMenuBarReserveHeight(newValue)
-                            }
+                        Picker("Sidebar position", selection: $sidebarPosition) {
+                            Text("Left").tag(WorkspaceSidebarPosition.left)
+                            Text("Right").tag(WorkspaceSidebarPosition.right)
                         }
+                        .onChange(of: sidebarPosition) { value in setSidebarGeometry(key: "position", value: value.rawValue) }
+                        Picker("Sidebar height", selection: $sidebarHeightMode) {
+                            Text("Standard").tag(WorkspaceSidebarHeightMode.standard)
+                            Text("Centered").tag(WorkspaceSidebarHeightMode.centered)
+                            Text("Full").tag(WorkspaceSidebarHeightMode.full)
+                        }
+                        .onChange(of: sidebarHeightMode) { value in setSidebarGeometry(key: "height-mode", value: value.rawValue) }
+                        Text("The menu bar always stays clear. Centered fits content up to 90% of the safe display height.")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                 }
 
@@ -121,10 +112,10 @@ struct ShortcutGeneralView: View {
         }
     }
 
-    private func setWorkspaceSidebarMenuBarReserveHeight(_ height: Int) {
+    private func setSidebarGeometry(key: String, value: String) {
         Task { @MainActor in
             do {
-                let targetUrl = try persistWorkspaceSidebarMenuBarReserveHeight(height)
+                let targetUrl = try persistWorkspaceSidebarGeometry(key: key, value: value)
                 _ = try await reloadConfig(forceConfigUrl: targetUrl)
                 WorkspaceSidebarPanel.refreshAll()
             } catch {
@@ -163,7 +154,8 @@ struct ShortcutGeneralView: View {
                 try await runLightSession(.menuBarButton, token) {
                     let isOk = try await reloadConfig()
                     if isOk {
-                        workspaceSidebarMenuBarReserveHeight = config.workspaceSidebar.menuBarReserveHeight
+                        sidebarPosition = config.workspaceSidebar.position
+                        sidebarHeightMode = config.workspaceSidebar.heightMode ?? .standard
                         projectDeletionAction = config.workspaceSidebar.projectDeletionAction
                         model.reload()
                     }

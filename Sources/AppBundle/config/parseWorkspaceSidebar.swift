@@ -2,6 +2,14 @@ import Foundation
 import TOMLKit
 
 private let workspaceSidebarParser: [String: any ParserProtocol<WorkspaceSidebarConfig>] = [
+    "position": Parser(\.position) { raw, backtrace in
+        parseString(raw, backtrace).flatMap { WorkspaceSidebarPosition(rawValue: $0).orFailure(.semantic(backtrace, "Possible values: left, right")) }
+    },
+    "height-mode": Parser(\.heightMode) { raw, backtrace in
+        parseString(raw, backtrace).flatMap { value in
+            WorkspaceSidebarHeightMode(rawValue: value).map { Optional($0) }.orFailure(.semantic(backtrace, "Possible values: standard, centered, full"))
+        }
+    },
     "enabled": Parser(\.enabled, parseBool),
     "enable-focus": Parser(\.enableFocus, parseBool),
     "auto-hide": Parser(\.autoHide, parseBool),

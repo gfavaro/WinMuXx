@@ -45,6 +45,8 @@ struct WorkspaceSidebarView: View {
         self.actions = actions
     }
 
+    var sidebarAlignment: Alignment { snapshot.configuration.position == .left ? .leading : .trailing }
+
     var body: some View {
         let collapsedWidth = snapshot.configuration.collapsedWidth
         let expandedWidth = snapshot.configuration.expandedWidth
@@ -53,16 +55,21 @@ struct WorkspaceSidebarView: View {
             min(1, (snapshot.visibleWidth - collapsedWidth) / max(expandedWidth - collapsedWidth, 1)),
         )
         
-        ZStack(alignment: .leading) {
+        ZStack(alignment: sidebarAlignment) {
             sidebarContent(expansionProgress: expansionProgress)
                 .frame(width: max(snapshot.visibleWidth, 0), alignment: .leading)
-                .mask(alignment: .leading) {
+                .mask(alignment: sidebarAlignment) {
                     Rectangle()
                         .frame(width: max(snapshot.visibleWidth, 0))
                 }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: sidebarAlignment)
         .background(Color.clear)
+        .overlay {
+            if snapshot.configuration.heightMode == .centered {
+                centeredContentMeasurement
+            }
+        }
         .transaction { transaction in
             if reduceMotion { transaction.animation = nil }
         }
@@ -496,6 +503,7 @@ extension WorkspaceSidebarView {
             browsedProjectId: browsedProjectId,
             expansionProgress: expansionProgress,
             sectionWidth: workspaceSidebarTopSectionWidth(expansionProgress: expansionProgress),
+            position: snapshot.configuration.position,
             onSelectScope: { scopeId in
                 if scopeId == workspaceSidebarDefaultScopeId {
                     browseMode = .activeProject
@@ -608,7 +616,7 @@ extension WorkspaceSidebarView {
     var sidebarShape: some Shape {
         let progress = snapshot.configuration.transparentExpansionProgress(visibleWidth: snapshot.visibleWidth)
         let radius = progress < workspaceSidebarRowsRevealProgress ? 0 : workspaceSidebarPanelRightCornerRadius
-        return WorkspaceSidebarPanelShape(rightCornerRadius: radius)
+        return WorkspaceSidebarPanelShape(rightCornerRadius: radius, position: snapshot.configuration.position)
     }
 
     @ViewBuilder
@@ -659,6 +667,7 @@ extension WorkspaceSidebarView {
 
 private struct WorkspaceSidebarPanelShape: Shape {
     let rightCornerRadius: CGFloat
+    var position: WorkspaceSidebarPosition = .left
 
     func path(in rect: CGRect) -> Path {
         let radius = min(rightCornerRadius, rect.width / 2, rect.height / 2)
@@ -677,6 +686,9 @@ private struct WorkspaceSidebarPanelShape: Shape {
         )
         path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
         path.closeSubpath()
+        if position == .right {
+            return path.applying(CGAffineTransform(a: -1, b: 0, c: 0, d: 1, tx: rect.minX + rect.maxX, ty: 0))
+        }
         return path
     }
 }
@@ -734,6 +746,20 @@ extension WorkspaceSidebarView {
         allowsActivation: Bool? = nil,
     ) -> some View {
         ScrollView {
+            workspacePageContent(projectId: projectId, workspaces: workspaces, expansionProgress: expansionProgress,
+                                 leadingInset: leadingInset, trailingInset: trailingInset, topPadding: topPadding,
+                                 showsPinnedActiveWorkspace: showsPinnedActiveWorkspace, showsCreateWorkspace: showsCreateWorkspace,
+                                 allowsActivation: allowsActivation)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    func workspacePageContent(
+        projectId: WorkspaceProjectId, workspaces: [WorkspaceSidebarWorkspaceViewModel], expansionProgress: CGFloat,
+        leadingInset: CGFloat, trailingInset: CGFloat, topPadding: CGFloat,
+        showsPinnedActiveWorkspace: Bool = true, showsCreateWorkspace: Bool = true,
+        allowsActivation: Bool? = nil, measuring: Bool = false
+    ) -> some View {
             VStack(alignment: .leading, spacing: 6) {
                 if showsPinnedActiveWorkspace,
                    let pinnedActiveWorkspace = pinnedActiveWorkspace(
@@ -743,7 +769,7 @@ extension WorkspaceSidebarView {
                     workspaceSection(
                         workspace: pinnedActiveWorkspace,
                         expansionProgress: expansionProgress,
-                        emitsDropTarget: true,
+                        emitsDropTarget: !measuring,
                         allowsWorkspaceActivation: false,
                         isPinnedActiveWorkspace: true,
                         projectContextLabel: projectName(snapshot.activeProjectId),
@@ -754,7 +780,7 @@ extension WorkspaceSidebarView {
                     workspaceSection(
                         workspace: workspace,
                         expansionProgress: expansionProgress,
-                        emitsDropTarget: true,
+                        emitsDropTarget: !measuring,
                         allowsWorkspaceActivation: allowsActivation ?? allowsWorkspaceActivation(projectId: projectId),
                         isPinnedActiveWorkspace: false,
                         projectContextLabel: browsedProjectId != nil && projectId != snapshot.activeProjectId ? projectName(projectId) : nil,
@@ -773,7 +799,7 @@ extension WorkspaceSidebarView {
                         dragPreview: snapshot.dropPreview,
                         expansionProgress: expansionProgress,
                         layout: snapshot.configuration,
-                        emitsDropTarget: true,
+                        emitsDropTarget: !measuring,
                         onCreateWorkspace: {
                             actions.send(.createWorkspace(
                                 projectId: projectId,
@@ -804,8 +830,6 @@ extension WorkspaceSidebarView {
             .padding(.trailing, trailingInset)
             .padding(.top, topPadding)
             .padding(.bottom, 10)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     func splitWorkspacePage(

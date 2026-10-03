@@ -80,6 +80,9 @@ enum ShortcutsPreset: String, Equatable, Sendable {
     case rectangle
 }
 
+enum WorkspaceSidebarPosition: String, CaseIterable, Sendable { case left, right }
+enum WorkspaceSidebarHeightMode: String, CaseIterable, Sendable { case standard, centered, full }
+
 struct WorkspaceSidebarConfig: ConvenienceCopyable, Equatable, Sendable {
     var enabled: Bool = false
     var enableFocus: Bool = false
@@ -102,6 +105,8 @@ struct WorkspaceSidebarConfig: ConvenienceCopyable, Equatable, Sendable {
     var chromeStyle: ChromeStyle = .liquidGlass
     var solidChromeColor: ChromeSolidColor = .midnight
     var solidChromeCustomColor: String = "#191B20"
+    var position: WorkspaceSidebarPosition = .left
+    var heightMode: WorkspaceSidebarHeightMode? = nil
     var menuBarReserveHeight: Int = 28
     var projectDeletionAction: WorkspaceProjectDeletionAction = .closeWindows
     var workspaceLabels: [String: String] = [:]

@@ -246,3 +246,21 @@ and Large (280 pt), applying immediately through the existing width setting.
 Existing custom widths remain selected until the user chooses a preset.
 Validation: all 723 tests passed for the frosted surface change, including the
 expanded/background/accessibility combinations.
+
+### Sidebar position and height
+
+Sidebar position offers Left (default) and Right. Both retain the selected display
+edge while expanding, mirror the inner separator/corners and popup anchoring, and
+reserve window space on the selected side. Text and item order stay unchanged.
+Sidebar height replaces the clearance controls in Appearance and General:
+Standard and Full fill the safe height; Centered measures the natural compact and
+expanded content, fits the larger, and grows to 90% of the safe height before
+scrolling. The same height is retained during hover expansion.
+All modes protect the menu bar and notch, including the menu-bar reveal region
+when auto-hidden. Thus Full and Standard currently have identical geometry.
+Config keys are `position = 'left' | 'right'` and
+`height-mode = 'standard' | 'centered' | 'full'`. Legacy clearance remains effective
+only without height-mode and cannot reduce the mandatory system reservation.
+Validation: geometry/config tests cover both edges, every height mode, negative
+screen origins, centered growth, overflow, and legacy precedence. Actual multi-
+monitor hover/drag and menu-bar reveal require manual validation after installation.

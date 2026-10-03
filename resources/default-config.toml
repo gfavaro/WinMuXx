@@ -71,7 +71,7 @@ on-mode-changed = []
     enabled = true
     # Offer a 'Focused' monitor scope in the sidebar's monitor selector.
     enable-focus = false
-    # Hide the compact rail until the pointer reaches the display's left edge.
+    # Hide the compact rail until the pointer reaches the selected display edge.
     auto-hide = false
     # Keep the full sidebar open and reserve its width for tiled windows.
     always-expanded = false
@@ -81,7 +81,10 @@ on-mode-changed = []
     # Legacy monitor = 'main' is also treated as all displays for this sidebar.
     # Use monitor = 1, 'secondary', 2, or a list to restrict it.
     # monitor = [1, 'secondary']
-    menu-bar-reserve-height = 28
+    position = 'left'
+    # All height modes protect the menu bar, including its auto-hide reveal area.
+    # Centered fits content, growing up to 90% of the safe display height.
+    height-mode = 'standard'
     project-deletion-action = 'close-windows'
     show-status-pills = true
     show-clock = false
@@ -92,7 +95,8 @@ on-mode-changed = []
     # Solid uses the selected opaque color. Also applies to tab groups and switcher.
     # Legacy appearance/background/frosted-tint keys remain accepted but no longer
     # override this style. The Settings UI calls this choice Sidebar appearance.
-    # Liquid Glass sidebar only: false shows wallpaper without the glass background.
+    # Compact Liquid Glass sidebar only: false shows wallpaper without glass.
+    # Expanded Liquid Glass always uses a frosted background.
     # Reduce Transparency overrides this with an opaque system background.
     menu-bar-background = true
     chrome-style = 'liquid-glass'

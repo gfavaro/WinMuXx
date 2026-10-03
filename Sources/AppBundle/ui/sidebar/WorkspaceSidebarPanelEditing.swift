@@ -256,12 +256,7 @@ extension WorkspaceSidebarPanel {
 
     func isScreenPointInsideVisibleRegion(_ point: CGPoint) -> Bool {
         guard isVisible else { return false }
-        let visibleRegion = NSRect(
-            x: frame.minX,
-            y: frame.minY,
-            width: viewModel.workspaceSidebarVisibleWidth,
-            height: frame.height,
-        )
+        let visibleRegion = workspaceSidebarVisibleFrame(panel: frame, width: viewModel.workspaceSidebarVisibleWidth, position: config.workspaceSidebar.position)
         return visibleRegion.contains(point)
     }
 }

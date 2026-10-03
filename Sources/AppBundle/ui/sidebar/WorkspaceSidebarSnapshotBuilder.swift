@@ -14,6 +14,8 @@ func workspaceSidebarConfiguration() -> WorkspaceSidebarConfiguration {
         showsStatusPills: config.workspaceSidebar.showStatusPills,
         appearance: config.workspaceSidebar.effectiveAppearance,
         background: config.workspaceSidebar.background,
+        position: config.workspaceSidebar.position,
+        heightMode: config.workspaceSidebar.heightMode,
         alwaysExpanded: config.workspaceSidebar.alwaysExpanded,
         menuBarBackground: config.workspaceSidebar.menuBarBackground,
         frostedTint: config.workspaceSidebar.frostedTint,

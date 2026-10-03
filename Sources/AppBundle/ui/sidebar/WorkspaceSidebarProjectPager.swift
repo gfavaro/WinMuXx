@@ -107,11 +107,11 @@ struct WorkspaceSidebarProjectPager: View {
             if isCompact {
                 compactProjectIndicator
             } else {
-                ZStack(alignment: .bottomTrailing) {
+                ZStack(alignment: layout.position == .left ? .bottomTrailing : .bottomLeading) {
                     projectControls
                     projectPopup
                 }
-                .frame(width: sectionWidth, height: pagerHeight, alignment: .bottomTrailing)
+                .frame(width: sectionWidth, height: pagerHeight, alignment: layout.position == .left ? .bottomTrailing : .bottomLeading)
                 .transaction { $0.animation = nil }
             }
         }

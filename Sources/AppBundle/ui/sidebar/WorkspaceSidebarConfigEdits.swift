@@ -265,3 +265,14 @@ private func tomlEscape(_ raw: String) -> String {
         .replacingOccurrences(of: "\\", with: "\\\\")
         .replacingOccurrences(of: "\"", with: "\\\"")
 }
+
+@MainActor
+func persistWorkspaceSidebarGeometry(key: String, value: String) throws -> URL {
+    precondition(key == "position" || key == "height-mode")
+    let targetUrl = preferredWorkspaceSidebarConfigUrl()
+    let currentText = (try? String(contentsOf: targetUrl, encoding: .utf8)) ?? starterConfigText()
+    let updatedText = updateWorkspaceSidebarScalarConfig(in: currentText, key: key, renderedValue: "'\(value)'")
+    try FileManager.default.createDirectory(at: targetUrl.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try updatedText.write(to: targetUrl, atomically: true, encoding: .utf8)
+    return targetUrl
+}

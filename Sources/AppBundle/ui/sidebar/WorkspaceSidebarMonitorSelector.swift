@@ -14,6 +14,7 @@ struct WorkspaceSidebarMonitorSelector: View {
     let browsedProjectId: WorkspaceProjectId?
     let expansionProgress: CGFloat
     let sectionWidth: CGFloat
+    var position: WorkspaceSidebarPosition = .left
     var onSelectScope: (String) -> Void = { selectWorkspaceSidebarMonitorScope($0) }
     var onSelectProject: (WorkspaceProjectId?) -> Void = { _ in }
     var onRenameProject: (WorkspaceSidebarProjectViewModel) -> Void = { _ in }
@@ -155,7 +156,7 @@ struct WorkspaceSidebarMonitorSelector: View {
         }
         .buttonStyle(.plain)
         .fixedSize(horizontal: true, vertical: false)
-        .overlay(alignment: .topTrailing) {
+        .overlay(alignment: position == .left ? .topTrailing : .topLeading) {
             projectPopup
                 .offset(y: workspaceSidebarDropdownHeight + workspaceSidebarSectionGap)
         }
