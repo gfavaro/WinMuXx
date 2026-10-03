@@ -25,3 +25,46 @@ func workspaceSidebarVisibleFrame(panel: CGRect, width: CGFloat, position: Works
     let width = max(0, min(width, panel.width))
     return CGRect(x: position == .left ? panel.minX : panel.maxX - width, y: panel.minY, width: width, height: panel.height)
 }
+
+struct WorkspaceSidebarPanelLayout {
+    let frame: NSRect
+    let expandedWidth: CGFloat
+    let collapsedWidth: CGFloat
+}
+
+extension WorkspaceSidebarPanel {
+    func currentSidebarPanelLayout() -> WorkspaceSidebarPanelLayout? {
+        currentSidebarPanelLayout(on: workspaceSidebarResolvedPanelMonitor())
+    }
+
+    func currentSidebarPanelLayout(on monitor: Monitor) -> WorkspaceSidebarPanelLayout? {
+        guard TrayMenuModel.shared.isEnabled,
+              config.workspaceSidebar.enabled,
+              let screen = workspaceSidebarPanelScreen(for: monitor)
+        else { return nil }
+        guard !shouldSuppressWorkspaceSidebarForFullscreenContent() else { return nil }
+
+        let sidebarConfig = config.workspaceSidebar
+        let expandedWidth = CGFloat(sidebarConfig.width)
+        let maximumExpandedWidth = expandedWidth * 2
+        let collapsedWidth = workspaceSidebarRestingWidth(sidebarConfig)
+        guard expandedWidth > 0, collapsedWidth >= 0 else { return nil }
+
+        let menuBarHeight = max(screen.frame.maxY - screen.visibleFrame.maxY, screen.safeAreaInsets.top, NSStatusBar.system.thickness)
+        return WorkspaceSidebarPanelLayout(
+            frame: workspaceSidebarPanelFrame(screen: screen.frame, menuBarHeight: menuBarHeight, config: sidebarConfig, contentHeight: measuredContentHeight > 0 ? measuredContentHeight : screen.frame.height * 0.6),
+            expandedWidth: expandedWidth,
+            collapsedWidth: collapsedWidth,
+        )
+    }
+
+    func workspaceSidebarPanelScreen() -> NSScreen? {
+        workspaceSidebarPanelScreen(for: workspaceSidebarResolvedPanelMonitor())
+    }
+
+    func workspaceSidebarPanelScreen(for monitor: Monitor) -> NSScreen? {
+        NSScreen.screens.getOrNil(
+            atIndex: monitor.monitorAppKitNsScreenScreensId - 1
+        ) ?? NSScreen.screens.first
+    }
+}
