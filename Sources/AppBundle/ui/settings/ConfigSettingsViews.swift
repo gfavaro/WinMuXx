@@ -41,6 +41,8 @@ struct ShortcutBehaviorSettingsView: View {
     @State private var defaultOrientation = config.defaultRootContainerOrientation
     @State private var flattenContainers = config.enableNormalizationFlattenContainers
     @State private var normalizeNestedContainers = config.enableNormalizationOppositeOrientationForNestedContainers
+    @State private var focusFollowsMouse = config.focusFollowsMouse
+    @State private var focusFollowsMouseDwell = config.focusFollowsMouseDwell
 
     var body: some View {
         SettingsScrollView {
@@ -53,6 +55,17 @@ struct ShortcutBehaviorSettingsView: View {
                 SettingsToggle("Tile new windows automatically", isOn: $automaticallyTileNewWindows, help: "Place new windows in the current tiled layout.") { persistRootBool("automatically-tile-new-windows", automaticallyTileNewWindows) }
                 SettingsToggle("Add new windows to the current tab group", isOn: $autoAddNewWindowsToTabGroup, help: "Keep new windows in the selected stack instead of creating a new tile.") { persistRootBool("auto-add-new-windows-to-tab-group", autoAddNewWindowsToTabGroup) }
                 SettingsToggle("Unhide macOS-hidden apps", isOn: $automaticallyUnhideMacosHiddenApps, help: "Restore apps macOS has hidden when they receive focus.") { persistRootBool("automatically-unhide-macos-hidden-apps", automaticallyUnhideMacosHiddenApps) }
+            }
+            SettingsSection("Pointer focus") {
+                SettingsToggle("Focus windows under the pointer", isOn: $focusFollowsMouse, help: "Focus the tiled window after the pointer rests over it.") {
+                    persistRootBool("focus-follows-mouse", focusFollowsMouse)
+                }
+                SettingsStepper("Hover delay", value: $focusFollowsMouseDwell, range: 0...2000, help: "Time the pointer must remain still before focusing the window.") {
+                    persistRootInt("focus-follows-mouse-dwell", focusFollowsMouseDwell)
+                }
+                .disabled(!focusFollowsMouse)
+                Text("A delay of 0 focuses immediately. Mouse clicks and window manipulation always take priority.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             SettingsSection("Window pairs") {
                 SettingsToggle("Double-sided windows", isOn: $doubleSidedWindows, help: "Replace two-window tab strips with two sides. Option-click anywhere in the window or press Option-Tab to flip.") {
@@ -100,6 +113,7 @@ struct ShortcutBehaviorSettingsView: View {
     }
 
     private func persistRootString(_ key: String, _ value: String) { persistConfig(section: nil, key: key, value: "'\(value)'") }
+    private func persistRootInt(_ key: String, _ value: Int) { persistConfig(section: nil, key: key, value: "\(value)") }
     private func persistConfig(section: String?, key: String, value: String) {
         persistSettingsConfig(section: section, key: key, renderedValue: value, model: model)
     }
