@@ -6,9 +6,9 @@
 # WinMuxX
 
 Personal fork by gfavaro, based on ZimengXiong/WinMux.
-See [fork maintenance, builds and releases](docs/FORK.md).
+See [fork maintenance, builds and releases](docs/FORK.md),
+[development guide](HACKING.md), and [documentation index](docs/README.md).
 Automatic upstream updates are disabled. Build with `make fork-build`.
-Upstream installation/release instructions below are project background only.
 
 <p align="left">A powerful sidebar-first window manager for macOS.</p>
 
@@ -18,25 +18,38 @@ https://github.com/user-attachments/assets/51983568-a168-494f-8ae3-5f50ca1efce1
 
 ### Native sidebar appearance
 
-The personal fork defaults to `[workspace-sidebar] appearance = 'system'`: a native
-macOS translucent sidebar with adaptive text and controls. Reduce Transparency uses
-an opaque system background. Choose `appearance = 'custom'` in the config or
-Appearance settings to keep the previous dark Liquid Glass/solid style. Tabs and
-the switcher retain their existing Chrome settings independently.
+Settings → Appearance controls the sidebar. Choose Liquid Glass for native glass
+on macOS 26 and later, or Solid color for an opaque preset/custom color. Earlier
+macOS versions use a native material fallback. Reduce Transparency forces an
+opaque system background in Liquid Glass. Expanded Liquid Glass always uses a
+frosted background; Show background controls the compact rail.
 
-With system appearance, `background = 'sidebar'` keeps the default native material;
-`'menu-bar'` uses a native header material as a menu-bar-style approximation, and
-`'transparent'` removes the compact rail's background, adapts its contrast to the
-local wallpaper file, and adds translucent frosted glass when expanded. Choose this
-in Appearance → Sidebar background. Reduce Transparency overrides all three with
-an opaque background. Custom appearance ignores this setting.
+Choose Left or Right, and Standard, Centered or Full height. Every mode reserves
+space for the menu bar, even when it auto-hides, and respects the notch. Centered
+fits its content up to 90% of the safe height, then scrolls. Standard and Full
+currently share the same safe geometry. Expanded and collapsed widths have
+Small, Medium and Large presets. Always expanded reserves window space on the
+chosen side.
 
-Choose an expanded glass color in Appearance → Expanded frosted tint, or set
-`frosted-tint = 'ice'`. Options are `automatic` (default), `white`, `black`, `cyan`,
-`pink`, `indigo`, `purple`, `ice` (cyan/pink gradient), and `aurora` (indigo/purple
-gradient). Automatic uses the average color behind each monitor's expanded sidebar,
-with a neutral fallback when the wallpaper cannot be read. These tint the translucent
-glass, not the wallpaper or compact rail.
+```toml
+[workspace-sidebar]
+    chrome-style = 'liquid-glass' # or 'solid'
+    menu-bar-background = true
+    position = 'left'            # or 'right'
+    height-mode = 'standard'     # or 'centered', 'full'
+```
+
+`appearance`, `background` and `frosted-tint` remain accepted for older configs;
+`chrome-style` is the appearance selector used at runtime. Legacy
+`menu-bar-reserve-height` applies only when height-mode is absent and cannot
+reduce the mandatory system reservation.
+
+### Menu-bar indicator
+
+Settings → Appearance → Menu bar offers Icon or Workspace. Workspace follows the
+focused monitor and shows the label initial, or the workspace number when there
+is no label. Icon supports color or monochrome appearance. Both open the same
+native action menu. These choices persist locally, outside the TOML config.
 
 ### Menu-bar actions and diagnostics
 
@@ -66,16 +79,14 @@ The sidebar is a more interactively-performant and useful alternative to [Sketch
 You can drag windows in and out of the sidebar from and to the current workspace. You can rearrange windows across all spaces using the sidebar, including tab groups.
 
 By default the sidebar rests as a compact rail and expands when hovered. To hide the rail
-completely until the pointer reaches the left display edge, enable auto-hide. The fork sidebar
-uses the system appearance by default; tabs and the switcher keep their Liquid Glass style
-on macOS 26 and newer. To apply an opaque custom color to all three:
+completely until the pointer reaches the selected display edge, enable auto-hide.
+Sidebar appearance also controls tabs and the switcher. To use an opaque color:
 
 ```toml
 [workspace-sidebar]
     auto-hide = true
-    appearance = 'custom'
     chrome-style = 'solid'
-    solid-chrome-color = 'lavender' # Choose any color shown in Appearance, including custom.
+    solid-chrome-color = 'blue' # Or choose Custom in Appearance.
 ```
 
 To keep the full sidebar visible, reserve its expanded width when laying out tiled windows:
@@ -86,7 +97,7 @@ To keep the full sidebar visible, reserve its expanded width when laying out til
     width = 240
 ```
 
-`always-expanded` takes precedence over `auto-hide`. The configured `gaps.outer.left` remains
+`always-expanded` takes precedence over `auto-hide`. The outer gap on the selected side remains
 the spacing between the sticky sidebar and tiled windows, and monitor selection continues to
 control which displays reserve sidebar space.
 
@@ -188,8 +199,8 @@ moving either workspace or changing monitor history. Hidden workspace activation
 `workspace-to-monitor-force-assignment`.
 `workspace next` and `workspace prev` skip workspaces visible on other displays; numbering stays
 project-wide. `workspace-back-and-forth` and `--auto-back-and-forth` use each display's own history.
-Clicking a sidebar activates hidden workspaces on that sidebar's display; visible workspaces
-are focused where they already are, without an override confirmation.
+Clicking a sidebar activates hidden workspaces on that sidebar's display. A workspace
+already visible on another display offers override confirmation before being brought here.
 
 ### Multi-Monitors
 Monitors share the global project/workspace state. Each monitor can be treated as *independent* from each other. They each just use the sidebar to browse through projects and 'select' a workspace to view. 
@@ -240,30 +251,19 @@ end tell
 ```
 
 ## Installation
-Install WinMux with Homebrew:
 
-```shell
-brew tap ZimengXiong/homebrew https://github.com/ZimengXiong/homebrew
-brew trust ZimengXiong/homebrew
-brew install --cask winmux
-xattr -cr /Applications/WinMux.app
-```
-
-Or download the latest binary from releases and launch.
-
-Release builds are signed with the project's Apple Development certificate. They are not notarized, so macOS may require you to right-click the app and choose **Open** the first time you launch it.
-
-WinMux checks GitHub Releases for signed updates automatically. You can also select **Check for Updates…** from the menu bar.
+Build this fork with `make fork-build BUILD_NUMBER=<new-number>`, then install
+`.release/WinMuxX.app` as described in [HACKING.md](HACKING.md). Fork builds retain
+the configured local signing identity, are not notarized, and have automatic
+upstream updates disabled. The upstream Homebrew cask installs WinMux, not WinMuxX.
 
 ## Migrating
-### From AeroSpace
-If `~/.config/winmux/winmux.toml` already exists, WinMux uses it as-is.
 
-If you have an AeroSpace config but no WinMux config yet, WinMux creates one for you on first launch. It copies over your AeroSpace shortcuts/key mapping and fills in the rest with WinMux defaults, including the sidebar and window tabs.
-
-You do not need to edit anything to get started. After import, WinMux uses `~/.config/winmux/winmux.toml` and leaves your AeroSpace config alone.
-
-If neither exists, WinMux creates a new WinMux config with the bundled defaults.
+The fork owns `${XDG_CONFIG_HOME:-~/.config}/winmux-gf/winmux.toml`. On first launch
+it copies an existing original WinMux config without modifying it. If no original
+config is found, AeroSpace import remains available; otherwise it generates a
+starter config. `--config-path` selects an explicit file. See
+[fork configuration ownership](docs/FORK.md#app-isolation) for details.
 
 ## Credits
 [Aerospace](https://github.com/nikitabobko/AeroSpace)

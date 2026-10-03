@@ -1,13 +1,14 @@
 # Personal fork: WinMuxX
 
 This fork integrates the six upstream contributions and retains personal defaults
-(automatic dwindle and enabled built-in borders). Additional workspace persistence,
-the roadmap, and experimental session-local minimum-size observations remain fork
-changes. Minimum-size observations do not yet constrain the layout engine.
+(automatic dwindle and enabled built-in borders). Workspace persistence, display topology handling, learned minimum-size constraints
+and sidebar appearance remain fork changes. Minimum-size observations persist
+through the frozen-world state and constrain tile/dwindle fitting; interactive
+validation is tracked in the roadmap.
 
 ## Repository workflow
 
-- `origin`: https://github.com/gfavaro/WinMux.git
+- `origin`: https://github.com/gfavaro/WinMuxX.git
 - `upstream`: https://github.com/ZimengXiong/WinMux.git
 - `main`: stable personal integration branch; never rebase or force-push it.
 - `feat/*`: personal feature branches, based on `main`.
@@ -49,57 +50,41 @@ at once: distinct bundle IDs do not prevent competing window manipulation.
 
 Selecting a workspace already visible on another monitor now focuses it there,
 without exchanging workspaces or changing either monitor's history. This applies
-to shortcuts, explicit `workspace --monitor`, back-and-forth, and sidebar clicks.
+to shortcuts, explicit `workspace --monitor`, back-and-forth, and ordinary activation commands. Sidebar clicks ask for override confirmation
+when the target workspace is visible on another display.
 Hidden workspaces still activate on the requested/focused monitor, respecting
 forced assignments. Explicit move/summon commands retain their own behavior.
 
 ### Sidebar appearance
 
-`[workspace-sidebar] appearance = 'system'` is the fork default, including when
-omitted in an existing config. It uses a native AppKit sidebar material with
-behind-window translucency, follows the system light/dark appearance, and uses
-an opaque system background when Reduce Transparency is enabled. It does not
-capture the wallpaper or reproduce the system menu bar pixel-for-pixel.
+The active Settings screen is `ShortcutSettingsView`, whose Appearance destination
+is `ShortcutAppearanceSettingsView`. The old SwiftUI tray renderer and General
+screen have been removed; the tray is owned by `NativeActionMenu`.
 
-The Sidebar background picker controls `[workspace-sidebar] background` in system
-appearance: `sidebar` (default, existing material), `menu-bar` (native AppKit header
-material, an approximation of the menu bar), or `transparent` (compact rail without
-panel fill or blur). The compact rail samples the left strip of each monitor's local
-wallpaper file off the UI thread, with cached thumbnails and 15-second checks. It
-chooses black/white text, strengthens secondary labels, and adds an opposite-color
-halo. Expanded mode fades in translucent native HUD material (86% opacity) with a
-light 8% tint, retaining behind-window blur and using system theme colors
-so windows behind it do not compete with the content. No screen capture, copied
-wallpaper, or network access is used. Unreadable/dynamic wallpapers fall back to
-the system theme; the file may not match a live video or dynamic wallpaper frame.
-Controls and selection highlights remain visible. Reduce Transparency takes
-priority over every background option. Custom appearance ignores this setting.
+`chrome-style = 'liquid-glass'` chooses native glass on macOS 26+, with a native
+material fallback on older systems. `solid` uses opaque preset/custom colors.
+The expanded glass sidebar always uses a frosted surface. `menu-bar-background`
+controls compact glass; Reduce Transparency has priority and makes it opaque.
+Legacy appearance/background/frosted-tint fields remain parseable, but the current
+style selector determines the runtime appearance. Solid text adapts to color
+luminance. Wallpaper contrast samples local files off the UI actor, using the
+selected edge of each monitor; no screen capture or network access is involved.
 
-`frosted-tint` affects only the expanded transparent sidebar. `automatic` retains
-the wallpaper's average color behind each monitor's expanded sidebar as a 28% veil,
-with a neutral 8% fallback if the local image cannot be read. Brightness of that
-expanded strip chooses the automatic text theme independently of the compact rail.
-`white`, `black`, `cyan`, `pink`, `indigo`, `purple`,
-`ice` (white/cyan/pink gradient), and `aurora` (black/indigo/purple gradient) use a
-28% colored veil over the native frost. Explicit colors choose a matching text
-theme; collapsed mode retains wallpaper-adaptive contrast. Other backgrounds,
-custom appearance, and Reduce Transparency ignore this preference. The visual
-palette in Appearance settings persists the same config key via reload.
+`position = 'left' | 'right'` selects the display edge. Expansion remains anchored
+to that edge; persistent width is reserved on the same side for tiled windows.
+`height-mode = 'standard' | 'centered' | 'full'` controls vertical geometry.
+Every mode protects the menu bar and notch, including the auto-hide reveal area.
+Centered fits natural content up to 90% of the safe height; Standard and Full
+currently have the same geometry. Legacy clearance is honored only without an
+explicit height-mode and cannot reduce the mandatory system reservation.
 
-Choose `appearance = 'custom'` to retain the previous dark sidebar with the
-configured `chrome-style` and solid colors. Tabs and the switcher always continue
-to use those Chrome settings independently. The Sidebar appearance picker applies
-changes through configuration reload; no automatic config migration is performed.
+Settings → Appearance → Menu bar chooses Icon or Workspace. Workspace shows the
+initial of a configured label, otherwise the workspace number, on the focused
+monitor. Icon supports color/monochrome. These preferences live in UserDefaults.
 
-Developer visual checks use synthetic fixtures and a code-defined backdrop only:
-
-```sh
-swift run winmux-marketing-renderer --sidebar-appearance-proof .release/sidebar-appearance-previews
-```
-
-The output includes expanded/collapsed light and dark themes, reduced transparency,
-increased contrast, and both legacy custom styles. Only the renderer's own windows
-are captured; the running window manager and the user's wallpaper are not captured.
+For architecture and validation commands, see [HACKING.md](../HACKING.md).
+Investigation and visual-review notes are indexed in [docs/README.md](README.md);
+those record historical experiments as well as the final behavior.
 
 ### Building
 

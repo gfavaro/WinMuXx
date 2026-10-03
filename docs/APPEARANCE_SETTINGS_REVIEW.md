@@ -279,4 +279,8 @@ Validation: 729 tests passed, including blank labels, multi-digit numbers, accen
 initials, emoji graphemes and wallpaper contrast on opposite display edges.
 
 The indicator controls are in the active ShortcutAppearanceSettingsView, reached
-by the Settings navigation. ShortcutGeneralView is legacy and is not displayed.
+by the Settings navigation. ShortcutGeneralView was legacy and has now been removed.
+
+Repository cleanup: active config panes now live in SettingsGeneralView.swift,
+SettingsWindowsView.swift, SettingsAppearanceView.swift and SettingsAutomationView.swift.
+See HACKING.md for current architecture; earlier file references are historical.
