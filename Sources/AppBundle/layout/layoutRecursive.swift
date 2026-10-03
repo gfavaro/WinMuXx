@@ -162,13 +162,23 @@ extension TilingContainer {
         var point = point
         var virtualPoint = virtual.topLeftCorner
 
-        guard let delta = ((orientation == .h ? width : height) - CGFloat(children.sumOfDouble { $0.getWeight(orientation) }))
-            .div(children.count) else { return }
+        let extent = orientation == .h ? width : height
+        let rawGap = context.resolvedGaps.inner.get(orientation).toDouble()
+        let available = extent - rawGap * CGFloat(max(children.count - 1, 0))
+        let requested = children.map { $0.getWeight(orientation) }
+        let minimums = children.map { $0.minimumLayoutExtent(along: orientation) }
+        let sizes: [CGFloat]
+        if minimums.allSatisfy({ $0 == 0 }) {
+            guard let delta = (extent - CGFloat(children.sumOfDouble { $0.getWeight(orientation) })).div(children.count) else { return }
+            sizes = requested.map { $0 + delta }
+        } else {
+            sizes = fitLayoutSizes(requested, minimums: minimums, total: available)
+        }
+        guard sizes.count == children.count else { return }
 
         let lastIndex = children.indices.last
         for (i, child) in children.enumerated() {
-            child.setWeight(orientation, child.getWeight(orientation) + delta)
-            let rawGap = context.resolvedGaps.inner.get(orientation).toDouble()
+            child.setWeight(orientation, sizes[i])
             // Gaps. Consider 4 cases:
             // 1. Multiple children. Layout first child
             // 2. Multiple children. Layout last child
@@ -205,7 +215,19 @@ extension TilingContainer {
             let splitOrientation: Orientation = currentWidth >= currentHeight ? .h : .v
             let splitLength = splitOrientation == .h ? currentWidth : currentHeight
             let gap = last ? 0 : CGFloat(context.resolvedGaps.inner.get(splitOrientation).toDouble())
-            let childLength = last ? splitLength : max(splitLength * 0.5 - gap / 2, 0)
+            let remainingChildren = children.dropFirst(index + 1)
+            let remainingMinimum = remainingChildren.reduce(CGFloat.zero) {
+                $0 + $1.minimumLayoutExtent(along: splitOrientation)
+            } + CGFloat(max(remainingChildren.count - 1, 0)) * (last ? 0 : CGFloat(context.resolvedGaps.inner.get(splitOrientation).toDouble()))
+            let rawChildLength = last ? splitLength : max(splitLength * 0.5 - gap / 2, 0)
+            let childMinimum = child.minimumLayoutExtent(along: splitOrientation)
+            let preferredChildLength = max(rawChildLength, childMinimum)
+            let childLength: CGFloat
+            if splitLength >= preferredChildLength + remainingMinimum {
+                childLength = preferredChildLength
+            } else {
+                childLength = rawChildLength
+            }
             let childWidth = splitOrientation == .h ? childLength : currentWidth
             let childHeight = splitOrientation == .v ? childLength : currentHeight
             try await child.layoutRecursive(
@@ -219,12 +241,12 @@ extension TilingContainer {
                 let consumed = childWidth + gap
                 currentPoint = currentPoint.addingXOffset(consumed)
                 currentVirtual = currentVirtual.copy(\.topLeftX, currentVirtual.topLeftX + consumed)
-                currentWidth -= consumed
+                currentWidth = max(currentWidth - consumed, 0)
             } else {
                 let consumed = childHeight + gap
                 currentPoint = currentPoint.addingYOffset(consumed)
                 currentVirtual = currentVirtual.copy(\.topLeftY, currentVirtual.topLeftY + consumed)
-                currentHeight -= consumed
+                currentHeight = max(currentHeight - consumed, 0)
             }
         }
     }
@@ -290,6 +312,50 @@ extension TilingContainer {
                         context,
                     )
             }
+        }
+    }
+}
+
+@MainActor
+func fitLayoutSizes(_ requested: [CGFloat], minimums: [CGFloat], total: CGFloat) -> [CGFloat] {
+    guard requested.count == minimums.count,
+          !requested.isEmpty,
+          minimums.allSatisfy({ $0.isFinite && $0 >= 0 }),
+          requested.allSatisfy({ $0.isFinite && $0 >= 0 }),
+          minimums.reduce(0, +) <= total else { return requested }
+    var result = requested
+    var pinned = Set<Int>()
+    while let short = result.indices.first(where: { !pinned.contains($0) && result[$0] + 0.5 < minimums[$0] }) {
+        pinned.insert(short)
+        let pinnedTotal = pinned.reduce(CGFloat.zero) { $0 + minimums[$1] }
+        let free = result.indices.filter { !pinned.contains($0) }
+        let freeRequested = free.reduce(CGFloat.zero) { $0 + requested[$1] }
+        for index in pinned { result[index] = minimums[index] }
+        let remaining = max(total - pinnedTotal, 0)
+        for index in free {
+            result[index] = freeRequested > 0 ? remaining * requested[index] / freeRequested : remaining / CGFloat(max(free.count, 1))
+        }
+    }
+    return result
+}
+
+@MainActor
+private extension TreeNode {
+    func minimumLayoutExtent(along axis: Orientation) -> CGFloat {
+        switch nodeCases {
+            case .window(let window):
+                guard let minimum = (window as? MacWindow)?.learnedMinimum.size else { return 0 }
+                return axis == .h ? minimum.width : minimum.height
+            case .tilingContainer(let container):
+                let childMinimums = container.children.map { $0.minimumLayoutExtent(along: axis) }
+                guard !childMinimums.isEmpty else { return 0 }
+                guard container.orientation == axis else { return childMinimums.max() ?? 0 }
+                let gap = CGFloat((axis == .h ? config.gaps.inner.horizontal : config.gaps.inner.vertical).getValue(for: mainMonitor))
+                return container.layout == .tiles
+                    ? childMinimums.reduce(0, +) + gap * CGFloat(childMinimums.count - 1)
+                    : childMinimums.max() ?? 0
+            default:
+                return 0
         }
     }
 }

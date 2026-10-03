@@ -177,6 +177,7 @@ private func applyFrozenWindowState(_ window: Window, _ frozenWindow: FrozenWind
     window.isFullscreen = frozenWindow.isFullscreen
     window.noOuterGapsInFullscreen = frozenWindow.noOuterGapsInFullscreen
     window.layoutReason = frozenWindow.layoutReason
+    (window as? MacWindow)?.restoreLearnedMinimum(frozenWindow.learnedMinimumSize)
 }
 
 @MainActor

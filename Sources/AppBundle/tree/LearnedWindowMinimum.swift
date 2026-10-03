@@ -5,6 +5,10 @@ import AppKit
 struct LearnedWindowMinimum {
     private(set) var size: CGSize = .zero
 
+    init(size: CGSize = .zero) {
+        self.size = size
+    }
+
     mutating func observe(requested: CGSize, first: CGSize, confirmed: CGSize) {
         guard [requested.width, requested.height, first.width, first.height,
                confirmed.width, confirmed.height].allSatisfy({ $0.isFinite && $0 > 0 }) else { return }
