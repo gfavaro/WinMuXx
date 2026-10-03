@@ -197,8 +197,8 @@ extension TilingContainer {
                 ),
                 context,
             )
-            virtualPoint = orientation == .h ? virtualPoint.addingXOffset(child.hWeight) : virtualPoint.addingYOffset(child.vWeight)
-            point = orientation == .h ? point.addingXOffset(child.hWeight) : point.addingYOffset(child.vWeight)
+            virtualPoint = virtualPoint.addingOffset(orientation, child.getWeight(orientation))
+            point = point.addingOffset(orientation, child.getWeight(orientation))
         }
     }
 

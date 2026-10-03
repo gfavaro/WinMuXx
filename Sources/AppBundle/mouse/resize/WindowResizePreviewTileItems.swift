@@ -46,12 +46,8 @@ func windowResizePreviewTileItems(
             context: context,
             activeWindowId: activeWindowId,
         )
-        virtualPoint = orientation == .h
-            ? virtualPoint.addingXOffset(adjustedWeight)
-            : virtualPoint.addingYOffset(adjustedWeight)
-        point = orientation == .h
-            ? point.addingXOffset(adjustedWeight)
-            : point.addingYOffset(adjustedWeight)
+        virtualPoint = virtualPoint.addingOffset(orientation, adjustedWeight)
+        point = point.addingOffset(orientation, adjustedWeight)
     }
     return items
 }
