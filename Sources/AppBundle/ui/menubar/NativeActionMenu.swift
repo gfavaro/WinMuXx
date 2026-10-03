@@ -14,7 +14,7 @@ final class NativeActionMenu: NSObject, NSMenuDelegate {
     private var observation: AnyCancellable?
     private var checkForUpdates: (() -> Void)?
     private var bindings = ActionMenuBindings(mode: nil)
-    private var lastIconState: (enabled: Bool, appearance: MenuBarIconAppearance)?
+    private var lastIconState: (enabled: Bool, appearance: MenuBarIconAppearance, indicator: MenuBarIndicator, text: String, name: String)?
 
     func install(checkForUpdates: (() -> Void)?) {
         guard statusItem == nil else { return }
@@ -32,9 +32,21 @@ final class NativeActionMenu: NSObject, NSMenuDelegate {
 
     private func updateIcon() {
         let model = TrayMenuModel.shared
-        let state = (enabled: model.isEnabled, appearance: model.experimentalUISettings.iconAppearance)
-        if let previous = lastIconState, previous.enabled == state.enabled, previous.appearance == state.appearance { return }
+        let state = (enabled: model.isEnabled, appearance: model.experimentalUISettings.iconAppearance, indicator: model.experimentalUISettings.indicator, text: model.menuBarWorkspaceIndicator, name: model.menuBarWorkspaceName)
+        if let previous = lastIconState, previous.enabled == state.enabled, previous.appearance == state.appearance, previous.indicator == state.indicator, previous.text == state.text, previous.name == state.name { return }
         lastIconState = state
+        if model.isEnabled && state.indicator == .workspace {
+            statusItem?.length = NSStatusItem.variableLength
+            statusItem?.button?.image = nil
+            statusItem?.button?.title = state.text
+            statusItem?.button?.font = .monospacedDigitSystemFont(ofSize: 14, weight: .medium)
+            statusItem?.button?.toolTip = "WinMux · \(state.name) · Focused display"
+            statusItem?.button?.setAccessibilityLabel("WinMux, workspace \(state.name), focused display")
+            return
+        }
+        statusItem?.length = NSStatusItem.squareLength
+        statusItem?.button?.title = ""
+        statusItem?.button?.setAccessibilityLabel(model.isEnabled ? "WinMux" : "WinMux disabled")
         let image: NSImage?
         if model.isEnabled {
             let monochrome = model.experimentalUISettings.iconAppearance != .color

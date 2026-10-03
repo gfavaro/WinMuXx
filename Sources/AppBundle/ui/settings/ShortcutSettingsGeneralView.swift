@@ -6,6 +6,7 @@ import SwiftUI
 struct ShortcutGeneralView: View {
     @ObservedObject var model: ShortcutSettingsModel
     @State private var displayStyle = ExperimentalUISettings().displayStyle
+    @State private var menuBarIndicator = ExperimentalUISettings().indicator
     @State private var iconAppearance = ExperimentalUISettings().iconAppearance
     @State private var sidebarPosition = config.workspaceSidebar.position
     @State private var sidebarHeightMode = config.workspaceSidebar.heightMode ?? .standard
@@ -61,24 +62,38 @@ struct ShortcutGeneralView: View {
                             }
                         }
 
-                        HStack {
-                            Text("Menu bar icon")
-                            Spacer()
-                            Picker("", selection: $iconAppearance) {
-                                ForEach(MenuBarIconAppearance.allCases) { appearance in
-                                    Text(appearance.title).tag(appearance)
-                                }
-                            }
-                            .labelsHidden()
-                            .pickerStyle(.segmented)
-                            .frame(width: 180)
-                            .onChange(of: iconAppearance) { newValue in
-                                var settings = ExperimentalUISettings()
-                                settings.iconAppearance = newValue
-                                TrayMenuModel.shared.experimentalUISettings = settings
+                        Picker("Menu bar indicator", selection: $menuBarIndicator) {
+                            ForEach(MenuBarIndicator.allCases) { indicator in
+                                Text(indicator.title).tag(indicator)
                             }
                         }
-
+                        .onChange(of: menuBarIndicator) { value in
+                            var settings = ExperimentalUISettings()
+                            settings.indicator = value
+                            TrayMenuModel.shared.experimentalUISettings = settings
+                            updateTrayText()
+                        }
+                        Text("Workspace shows the label initial, or its number when unlabeled, on the focused display.")
+                            .font(.caption).foregroundStyle(.secondary)
+                        if menuBarIndicator == .icon {
+                            HStack {
+                                Text("Menu bar icon")
+                                Spacer()
+                                Picker("", selection: $iconAppearance) {
+                                    ForEach(MenuBarIconAppearance.allCases) { appearance in
+                                        Text(appearance.title).tag(appearance)
+                                    }
+                                }
+                                .labelsHidden()
+                                .pickerStyle(.segmented)
+                                .frame(width: 180)
+                                .onChange(of: iconAppearance) { newValue in
+                                    var settings = ExperimentalUISettings()
+                                    settings.iconAppearance = newValue
+                                    TrayMenuModel.shared.experimentalUISettings = settings
+                                }
+                            }
+                        }
                         Picker("Sidebar position", selection: $sidebarPosition) {
                             Text("Left").tag(WorkspaceSidebarPosition.left)
                             Text("Right").tag(WorkspaceSidebarPosition.right)

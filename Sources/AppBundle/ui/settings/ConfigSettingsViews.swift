@@ -121,6 +121,8 @@ struct ShortcutBehaviorSettingsView: View {
 
 struct ShortcutAppearanceSettingsView: View {
     @ObservedObject var model: ShortcutSettingsModel
+    @State private var menuBarIndicator = ExperimentalUISettings().indicator
+    @State private var menuBarIconAppearance = ExperimentalUISettings().iconAppearance
     @State private var sidebarEnabled = config.workspaceSidebar.enabled
     @State private var sidebarFocusEnabled = config.workspaceSidebar.enableFocus
     @State private var sidebarDisplayMode = SettingsSidebarDisplayMode(config.workspaceSidebar)
@@ -157,6 +159,29 @@ struct ShortcutAppearanceSettingsView: View {
             if let error = model.errorMessage {
                 SettingsSection("Could not save setting") {
                     Text(error).foregroundStyle(.red).textSelection(.enabled)
+                }
+            }
+            SettingsSection("Menu bar") {
+                SettingsPicker("Menu bar indicator", selection: $menuBarIndicator,
+                               help: "Workspace follows the focused display: label initial when named, workspace number otherwise.") {
+                    Text("Icon").tag(MenuBarIndicator.icon)
+                    Text("Workspace").tag(MenuBarIndicator.workspace)
+                } onChange: {
+                    var settings = ExperimentalUISettings()
+                    settings.indicator = menuBarIndicator
+                    TrayMenuModel.shared.experimentalUISettings = settings
+                    updateTrayText()
+                }
+                if menuBarIndicator == .icon {
+                    SettingsPicker("Icon appearance", selection: $menuBarIconAppearance, help: "Choose a color or monochrome tray icon.") {
+                        ForEach(MenuBarIconAppearance.allCases) { appearance in
+                            Text(appearance.title).tag(appearance)
+                        }
+                    } onChange: {
+                        var settings = ExperimentalUISettings()
+                        settings.iconAppearance = menuBarIconAppearance
+                        TrayMenuModel.shared.experimentalUISettings = settings
+                    }
                 }
             }
             SettingsSection("Sidebar") {

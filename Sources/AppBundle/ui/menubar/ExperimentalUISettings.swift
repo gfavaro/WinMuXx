@@ -20,6 +20,11 @@ struct ExperimentalUISettings {
         }
     }
 
+    var indicator: MenuBarIndicator {
+        get { MenuBarIndicator(rawValue: UserDefaults.standard.string(forKey: "menuBarIndicator") ?? "") ?? .icon }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: "menuBarIndicator") }
+    }
+
     var iconAppearance: MenuBarIconAppearance {
         get {
             guard let value = UserDefaults.standard.string(forKey: ExperimentalUISettingsItems.iconAppearance.rawValue) else {
@@ -69,4 +74,15 @@ enum MenuBarStyle: String, CaseIterable, Identifiable, Equatable, Hashable {
 enum ExperimentalUISettingsItems: String {
     case displayStyle
     case iconAppearance
+}
+
+enum MenuBarIndicator: String, CaseIterable, Identifiable {
+    case icon, workspace
+    var id: String { rawValue }
+    var title: String { self == .icon ? "Icon" : "Workspace" }
+}
+
+func menuBarWorkspaceIndicator(label: String?, number: Int) -> String {
+    let label = label?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    return label.first.map { String($0).uppercased() } ?? String(number)
 }

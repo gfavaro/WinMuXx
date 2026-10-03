@@ -7,6 +7,8 @@ public final class TrayMenuModel: ObservableObject {
     init() {}
 
     @Published var trayText: String = ""
+    @Published var menuBarWorkspaceIndicator: String = "1"
+    @Published var menuBarWorkspaceName: String = ""
     @Published var trayItems: [TrayItem] = []
     /// Is "layouting" enabled
     @Published var isEnabled: Bool = true
@@ -59,6 +61,14 @@ extension ObservableObject {
 
 @MainActor func updateTrayText() {
     let focus = focus
+    let workspace = focus.workspace
+    let number = automaticWorkspaceDisplayIndex(workspace, focusedWorkspace: workspace)
+        ?? Int(workspace.name)
+        ?? userFacingWorkspaces(orderedWorkspacesForPresentation(), focusedWorkspace: workspace)
+            .filter { $0.projectId == workspace.projectId }.firstIndex(of: workspace).map { $0 + 1 }
+        ?? 1
+    TrayMenuModel.shared.setIfChanged(\.menuBarWorkspaceIndicator, menuBarWorkspaceIndicator(label: config.workspaceSidebar.workspaceLabels[workspace.name], number: number))
+    TrayMenuModel.shared.setIfChanged(\.menuBarWorkspaceName, workspaceDisplayName(workspace.name))
     TrayMenuModel.shared.setIfChanged(\.trayText, activeMode?.takeIf { $0 != mainModeId }?.first.map { "(\($0.uppercased()))" } ?? "A")
     let workspaces = userFacingWorkspaces(Workspace.all, focusedWorkspace: focus.workspace).filter {
         $0.projectId == activeWorkspaceProjectId(for: $0.workspaceMonitor)

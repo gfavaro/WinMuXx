@@ -264,3 +264,19 @@ only without height-mode and cannot reduce the mandatory system reservation.
 Validation: geometry/config tests cover both edges, every height mode, negative
 screen origins, centered growth, overflow, and legacy precedence. Actual multi-
 monitor hover/drag and menu-bar reveal require manual validation after installation.
+
+### Menu bar workspace indicator
+
+Appearance → Menu bar now offers two indicator choices: Icon (default) and Workspace.
+Workspace uses the first Unicode character of the configured label, uppercased;
+blank/missing labels use the existing workspace number, or its presentation index
+for named workspaces. It follows the focused display. The tooltip/accessibility
+label identifies the full workspace name, and the existing action menu is retained.
+Disabled management retains its pause icon. Icon color/monochrome controls appear
+only for Icon. Preference changes persist locally and update immediately through
+the existing model observation; no polling or extra permissions are introduced.
+Validation: 729 tests passed, including blank labels, multi-digit numbers, accented
+initials, emoji graphemes and wallpaper contrast on opposite display edges.
+
+The indicator controls are in the active ShortcutAppearanceSettingsView, reached
+by the Settings navigation. ShortcutGeneralView is legacy and is not displayed.
