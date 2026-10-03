@@ -15,6 +15,8 @@ final class WorkspaceSidebarInlineTextKeyTest: XCTestCase {
                 isARepeat: false, keyCode: keyCode,
             ))
             let cgEvent = try XCTUnwrap(CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: true))
+            // CGEvent inherits the live keyboard state unless flags are set explicitly.
+            cgEvent.flags = []
             XCTAssertEqual(workspaceSidebarInlineTextKey(from: event), expected)
             XCTAssertEqual(workspaceSidebarInlineTextKey(from: cgEvent), expected)
         }
