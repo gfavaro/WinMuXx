@@ -106,7 +106,9 @@ private final class WindowBorderPanel: NSPanelHud {
         isFloatingPanel = false
         isExcludedFromWindowsMenu = true
         animationBehavior = .none
-        collectionBehavior = [.stationary, .ignoresCycle, .fullScreenAuxiliary]
+        // Transient panels are hidden by Exposé/Mission Control. Stationary panels
+        // deliberately remain visible there, even before our next refresh can detect it.
+        collectionBehavior = [.transient, .ignoresCycle, .fullScreenAuxiliary]
         contentView = borderView
         borderView.autoresizingMask = [.width, .height]
     }
