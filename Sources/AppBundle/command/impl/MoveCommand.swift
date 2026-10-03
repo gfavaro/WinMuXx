@@ -19,15 +19,17 @@ struct MoveCommand: Command {
                excludingMoveNode: currentNode,
            )
         {
-            swapNodes(currentNode, neighbor.moveNode)
-            return true
+            return moveDwindleNode(currentNode, beside: neighbor.moveNode, direction: direction)
         }
         guard let parent = currentNode.parent else { return false }
         switch parent.cases {
             case .tilingContainer(let parent):
+                if parent.layout == .dwindle {
+                    return moveOut(node: currentNode, direction: direction, io, args, env)
+                }
                 let indexOfCurrent = currentNode.ownIndex.orDie()
                 let indexOfSiblingTarget = indexOfCurrent + direction.focusOffset
-                if parent.orientation == direction.orientation && parent.children.indices.contains(indexOfSiblingTarget) {
+                if parent.navigationOrientation == direction.orientation && parent.children.indices.contains(indexOfSiblingTarget) {
                     let siblingTarget = parent.children[indexOfSiblingTarget]
                     if currentNode is TilingContainer || (siblingTarget as? TilingContainer)?.layout == .tabGroup {
                         return moveNodeToSiblingIndex(currentNode, parent, indexOfSiblingTarget)
@@ -120,7 +122,7 @@ private let moveOutMacosUnconventionalWindow = "moving macOS fullscreen, minimiz
 ) -> Bool {
     let innerMostChild = node.parents.first(where: {
         return switch $0.parent?.cases {
-            case .tilingContainer(let parent): parent.orientation == direction.orientation
+            case .tilingContainer(let parent): parent.navigationOrientation == direction.orientation
             // Stop searching
             case .workspace, .macosMinimizedWindowsContainer, nil, .macosFullscreenWindowsContainer,
                  .macosHiddenAppsWindowsContainer, .macosPopupWindowsContainer: true
@@ -130,7 +132,7 @@ private let moveOutMacosUnconventionalWindow = "moving macOS fullscreen, minimiz
     guard let parent = innerMostChild.parent else { return false }
     switch parent.cases {
         case .tilingContainer(let parent):
-            check(parent.orientation == direction.orientation)
+            check(parent.navigationOrientation == direction.orientation)
             guard let ownIndex = innerMostChild.ownIndex else { return false }
             node.bind(to: parent, adaptiveWeight: WEIGHT_AUTO, index: ownIndex + direction.insertionOffset)
             return true
@@ -179,7 +181,7 @@ extension TilingTreeNodeCases {
             case .window:
                 self
             case .tilingContainer(let container):
-                if container.orientation == orientation {
+                if container.navigationOrientation == orientation {
                     .tilingContainer(container)
                 } else {
                     container.mostRecentChild.orDie("Empty containers must be detached during normalization")
@@ -199,4 +201,28 @@ extension Window {
             return self
         }
     }
+}
+
+@MainActor
+private func moveDwindleNode(_ node: TreeNode, beside neighbor: TreeNode, direction: CardinalDirection) -> Bool {
+    guard let parent = neighbor.parent as? TilingContainer,
+          !neighbor.parents.contains(where: { $0 === node }) else { return false }
+    if node.parent === parent {
+        swapNodes(node, neighbor)
+        return true
+    }
+    if parent.layout == .tiles, parent.navigationOrientation == direction.orientation {
+        node.unbindFromParent()
+        node.bind(to: parent, adaptiveWeight: WEIGHT_AUTO,
+            index: neighbor.ownIndex.orDie() + (direction.isPositive ? 0 : 1))
+        return true
+    }
+    let ratios = parent.dwindleSplitRatios
+    let binding = neighbor.unbindFromParent()
+    let split = TilingContainer(parent: parent, adaptiveWeight: binding.adaptiveWeight,
+        direction.orientation, .tiles, index: binding.index)
+    parent.dwindleSplitRatios = ratios
+    neighbor.bind(to: split, adaptiveWeight: 1, index: 0)
+    node.bind(to: split, adaptiveWeight: 1, index: direction.isPositive ? 0 : 1)
+    return true
 }

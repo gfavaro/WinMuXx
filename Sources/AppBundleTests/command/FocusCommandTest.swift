@@ -100,6 +100,7 @@ final class FocusCommandTest: XCTestCase {
 
     func testDwindleFocusUsesGeometricNeighborsOnBothAxes() async throws {
         config.defaultRootContainerLayout = .dwindle
+        config.defaultRootContainerOrientation = .auto
         let workspace = Workspace.get(byName: name)
         let root = workspace.rootTilingContainer
         let left = TestWindow.new(id: 7101, parent: root)
@@ -109,7 +110,7 @@ final class FocusCommandTest: XCTestCase {
 
         XCTAssertTrue(left.focusWindow())
         try await FocusCommand.new(direction: .down).run(.defaultEnv, .emptyStdin)
-        XCTAssertEqual(focus.windowOrNil?.windowId, lowerRight.windowId)
+        XCTAssertEqual(focus.windowOrNil?.windowId, left.windowId)
 
         XCTAssertTrue(upperRight.focusWindow())
         try await FocusCommand.new(direction: .down).run(.defaultEnv, .emptyStdin)

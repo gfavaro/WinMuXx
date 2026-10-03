@@ -13,10 +13,13 @@ extension TilingContainer {
         // Keep the dwindle root: it carries the insertion policy even when its only child is a tiles split.
         let preservesDwindleRoot = isRootContainer && layout == .dwindle
         if let child = children.singleOrNil(), config.enableNormalizationFlattenContainers && !preservesDwindleRoot && (child is TilingContainer || !isRootContainer) {
+            let dwindleParent = parent as? TilingContainer
+            let ratios = dwindleParent?.dwindleSplitRatios
             child.unbindFromParent()
             let mru = parent?.mostRecentChild
             let previousBinding = unbindFromParent()
             child.bind(to: previousBinding.parent, adaptiveWeight: previousBinding.adaptiveWeight, index: previousBinding.index)
+            if let ratios { dwindleParent?.dwindleSplitRatios = ratios }
             (child as? TilingContainer)?.unbindEmptyAndAutoFlatten()
             if mru != self {
                 mru?.markAsMostRecentChild()

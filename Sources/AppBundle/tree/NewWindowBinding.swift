@@ -46,9 +46,14 @@ private func bindingDataBySplittingDwindleAnchor(workspace: Workspace, focusedWi
     while let parent = anchor.parent as? TilingContainer, parent.layout == .tabGroup {
         anchor = parent
     }
-    let previousBinding = anchor.unbindFromParent()
-    let splitRect = anchor.lastAppliedLayoutVirtualRect ?? workspace.workspaceMonitor.visibleRectPaddedByOuterGaps
+    let splitRect = anchor.lastAppliedLayoutPhysicalRect ?? anchor.lastAppliedLayoutVirtualRect ?? workspace.workspaceMonitor.visibleRectPaddedByOuterGaps
     let orientation: Orientation = splitRect.width >= splitRect.height ? .h : .v
+    let parent = anchor.parent as? TilingContainer
+    if let parent, parent.layout == .tiles, parent.orientation == orientation {
+        return BindingData(parent: parent, adaptiveWeight: WEIGHT_AUTO, index: anchor.ownIndex.orDie() + 1)
+    }
+    let ratios = parent?.dwindleSplitRatios
+    let previousBinding = anchor.unbindFromParent()
     let split = TilingContainer(
         parent: previousBinding.parent,
         adaptiveWeight: previousBinding.adaptiveWeight,
@@ -56,6 +61,7 @@ private func bindingDataBySplittingDwindleAnchor(workspace: Workspace, focusedWi
         .tiles,
         index: previousBinding.index,
     )
+    if let ratios { parent?.dwindleSplitRatios = ratios }
     anchor.bind(to: split, adaptiveWeight: 1, index: 0)
     return BindingData(parent: split, adaptiveWeight: 1, index: 1)
 }

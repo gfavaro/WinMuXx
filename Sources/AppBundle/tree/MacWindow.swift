@@ -3,6 +3,8 @@ import Common
 
 final class MacWindow: Window {
     let macApp: MacApp
+    @MainActor override var minimumLayoutSize: CGSize { learnedMinimum.size }
+
     @MainActor private(set) var learnedMinimum = LearnedWindowMinimum()
     @MainActor private var minimumObservation: Task<Void, Never>?
     @MainActor private var frameRequestGeneration: UInt64 = 0
