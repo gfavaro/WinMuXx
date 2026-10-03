@@ -6,6 +6,28 @@ import XCTest
 
 @MainActor
 final class WorkspaceSidebarAppearanceTest: XCTestCase {
+    func testCompactControlsFitEverySupportedRailWidth() {
+        for width in [28, 36, 44, 50, 56, 120] {
+            let metrics = WorkspaceSidebarCompactMetrics(width: CGFloat(width))
+            XCTAssertLessThanOrEqual(metrics.badgeSize + 2 * metrics.innerInset, metrics.sectionWidth)
+            XCTAssertLessThanOrEqual(metrics.sectionWidth + 2 * workspaceSidebarCompactRailHorizontalInset, CGFloat(width))
+            XCTAssertGreaterThan(metrics.badgeSize, 0)
+        }
+    }
+
+    func testCompactPresetsScaleControlsAndKeepMediumAtExistingSize() {
+        let small = WorkspaceSidebarCompactMetrics(width: 36)
+        let medium = WorkspaceSidebarCompactMetrics(width: 44)
+        let large = WorkspaceSidebarCompactMetrics(width: 56)
+        XCTAssertEqual(medium.fontSize, 18)
+        XCTAssertEqual(medium.badgeSize, workspaceSidebarBadgeWidth)
+        XCTAssertEqual(medium.headerHeight, workspaceSidebarWorkspaceSectionHeaderHeight)
+        XCTAssertLessThan(small.fontSize, medium.fontSize)
+        XCTAssertLessThan(medium.fontSize, large.fontSize)
+        XCTAssertLessThan(small.headerHeight, medium.headerHeight)
+        XCTAssertLessThan(medium.headerHeight, large.headerHeight)
+    }
+
     func testConfigurationChangePublishesWithoutWorkspaceChanges() {
         let model = TrayMenuModel()
         var updates = 0

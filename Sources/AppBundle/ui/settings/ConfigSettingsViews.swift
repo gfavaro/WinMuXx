@@ -208,7 +208,15 @@ struct ShortcutAppearanceSettingsView: View {
                 .disabled(!sidebarEnabled)
                 SettingsStepper("Expanded width", value: $sidebarWidth, range: max(120, collapsedWidth + 1)...max(480, collapsedWidth + 1), help: "Width of the fully expanded sidebar.") { sidebarInt("width", sidebarWidth) }
                 .disabled(!sidebarEnabled)
-                SettingsStepper("Collapsed width", value: $collapsedWidth, range: 28...max(28, min(120, sidebarWidth - 1)), help: "Width of the compact sidebar rail.") { sidebarInt("collapsed-width", collapsedWidth) }
+                SettingsPicker("Collapsed sidebar size", selection: $collapsedWidth,
+                               help: "Width of the collapsed rail: Small 36 pt, Medium 44 pt, Large 56 pt. Auto-hide uses this size when revealing the rail.") {
+                    Text("Small").tag(36).disabled(sidebarWidth <= 36)
+                    Text("Medium").tag(44).disabled(sidebarWidth <= 44)
+                    Text("Large").tag(56).disabled(sidebarWidth <= 56)
+                    if ![36, 44, 56].contains(collapsedWidth) {
+                        Text("Custom (\(collapsedWidth) pt)").tag(collapsedWidth)
+                    }
+                } onChange: { sidebarInt("collapsed-width", collapsedWidth) }
                 .disabled(!sidebarEnabled || sidebarDisplayMode == .expanded)
                 SettingsStepper("Top clearance", value: $menuBarReserveHeight, range: 0...72, help: "Space above the sidebar in points. Use 0 to extend it to the top edge, for example with an automatically hidden menu bar.") { sidebarInt("menu-bar-reserve-height", menuBarReserveHeight) }
                 .disabled(!sidebarEnabled)

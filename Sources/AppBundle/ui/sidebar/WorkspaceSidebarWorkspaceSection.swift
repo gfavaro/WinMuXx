@@ -34,7 +34,8 @@ struct WorkspaceSidebarWorkspaceSection: View {
     @State var isDropSettling = false
     @Environment(\.accessibilityReduceMotion) var reduceMotion
 
-    let headerHeight: CGFloat = workspaceSidebarWorkspaceSectionHeaderHeight
+    var compactMetrics: WorkspaceSidebarCompactMetrics { WorkspaceSidebarCompactMetrics(width: layout.collapsedWidth) }
+    var headerHeight: CGFloat { isCompact ? compactMetrics.headerHeight : workspaceSidebarWorkspaceSectionHeaderHeight }
     let rowHeight: CGFloat = workspaceSidebarWorkspaceRowHeight
 
     var contentWidth: CGFloat { workspaceSidebarContentWidth(expansionProgress, layout: layout) }
@@ -65,7 +66,7 @@ struct WorkspaceSidebarWorkspaceSection: View {
     var body: some View {
         interactiveSectionContent
             .padding(.vertical, isCompact ? 3 : 4)
-            .padding(.horizontal, workspaceSidebarSectionInnerHorizontalInset)
+            .padding(.horizontal, isCompact ? compactMetrics.innerInset : workspaceSidebarSectionInnerHorizontalInset)
             .frame(width: sectionWidth, alignment: .leading)
             .frame(minHeight: sectionMinHeight, alignment: .top)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -296,12 +297,12 @@ extension WorkspaceSidebarWorkspaceSection {
 extension WorkspaceSidebarWorkspaceSection {
     var workspaceBadge: some View {
         Text(workspaceBadgeText)
-            .font(.system(size: 18, weight: isActiveOnTargetMonitor ? .bold : .semibold))
+            .font(.system(size: compactMetrics.fontSize, weight: isActiveOnTargetMonitor ? .bold : .semibold))
             .monospacedDigit()
             .foregroundStyle(workspaceBadgeForeground)
             .lineLimit(1)
             .minimumScaleFactor(0.65)
-            .frame(width: workspaceSidebarBadgeWidth, height: workspaceSidebarBadgeWidth)
+            .frame(width: compactMetrics.badgeSize, height: compactMetrics.badgeSize)
     }
 
     var workspaceBadgeText: String {
@@ -347,7 +348,7 @@ extension WorkspaceSidebarWorkspaceSection {
         Group {
             if isCompact {
                 workspaceBadge
-                    .frame(width: workspaceSidebarBadgeWidth, height: workspaceSidebarBadgeWidth)
+                    .frame(width: compactMetrics.badgeSize, height: compactMetrics.badgeSize)
                     .frame(maxWidth: .infinity, alignment: .center)
             } else {
                 expandedHeader

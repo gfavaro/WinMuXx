@@ -58,7 +58,7 @@ Os controles ficam próximos do elemento afetado para preservar o contexto.
 | Reveal sidebar at the display edge | Auto-hide zera a largura em repouso, mantendo ativação pela borda. | Integrado ao menu Sidebar display. |
 | Keep sidebar expanded | Expansão persistente; reserva largura na área das janelas. | Integrado ao mesmo menu. A prioridade antiga é preservada ao ler configs com ambos os flags true. |
 | Expanded width | Campo numérico + stepper; largura completa do painel. | Manter; limite inferior maior que a largura compacta. |
-| Collapsed width | Campo numérico + stepper; largura do rail compacto e área de ativação/drag. | Indisponível em Always expanded. Auto-hide ainda usa essa medida ao revelar o rail. |
+| Collapsed width | Menu Collapsed sidebar size: Small (36 pt), Medium (44 pt), Large (56 pt). Valores legados fora dos presets aparecem como Custom. | Indisponível em Always expanded. Auto-hide usa essa medida ao revelar o rail. O tamanho altera a largura do painel, a fonte, a área do seletor e o botão + no modo recolhido. |
 | Menu bar reserve | Altura retirada do topo do painel da sidebar. | Renomeado Top clearance; não é o outer top gap das janelas. |
 | Show status pills | Liga indicadores de status dentro da sidebar. | Manter, independente do relógio. |
 | Show clock | Liga o cartão que contém relógio e calendário. | Manter como mestre dos próximos três itens. |
@@ -160,3 +160,21 @@ WinMuxX agora usa largura de conteúdo fixa de 757 pt, altura inicial de 700 pt 
 altura mínima de conteúdo de 470 pt, com redimensionamento vertical. A coluna de
 navegação usa largura ideal de 200 pt. Estes ajustes e as amostras circulares são
 posteriores ao build 19 instalado.
+
+## Tamanho da sidebar recolhida
+
+Collapsed sidebar size substitui o campo numérico por Small, Medium e Large,
+usando a mesma chave `collapsed-width` e o reload imediato já existente. Medium
+corresponde ao padrão de 44 pt. Valores personalizados do TOML são preservados e
+identificados no menu; escolher um preset passa a salvar sua largura. Os presets
+que não cabem na largura expandida ficam indisponíveis. O modo Always expanded
+desabilita esse controle; Auto-hide continua usando a largura ao revelar o rail.
+Este ajuste também é posterior ao build 19 instalado.
+
+A fonte dos badges, suas dimensões, a altura dos seletores e o botão + agora
+escalam com a largura recolhida. Medium mantém fonte de 18 pt, badge de 22 pt e
+altura de seletor de 32 pt. Valores personalizados também ajustam a escala, com
+limites para evitar controles excessivamente pequenos ou grandes. Os espaçamentos
+internos respeitam a largura disponível; o layout expandido mantém sua escala.
+Dois testes adicionais verificam a escala dos presets e a ausência de overflow
+horizontal em larguras de 28 a 120 pt.

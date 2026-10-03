@@ -19,6 +19,7 @@ struct WorkspaceSidebarCreateWorkspaceSection: View {
     @State private var isDropTargeted = false
     @State private var isDropSettling = false
 
+    private var compactMetrics: WorkspaceSidebarCompactMetrics { WorkspaceSidebarCompactMetrics(width: layout.collapsedWidth) }
     private var sectionWidth: CGFloat { workspaceSidebarSectionWidth(expansionProgress, layout: layout) }
     private var isCompact: Bool { expansionProgress < workspaceSidebarRowsRevealProgress }
     private var showsDropTarget: Bool {
@@ -84,7 +85,7 @@ struct WorkspaceSidebarCreateWorkspaceSection: View {
             HStack(spacing: workspaceSidebarHeaderSpacing) {
                 if isCompact {
                     Image(systemName: "plus")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 14 * compactMetrics.scale, weight: .semibold))
                         .foregroundStyle(sidebarColors.text(opacity: 0.45))
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 } else {
@@ -101,10 +102,10 @@ struct WorkspaceSidebarCreateWorkspaceSection: View {
                 }
             }
             .padding(.vertical, isCompact ? 3 : 4)
-            .padding(.horizontal, workspaceSidebarSectionInnerHorizontalInset + workspaceSidebarHeaderRowLeadingPadding)
+            .padding(.horizontal, isCompact ? compactMetrics.innerInset : workspaceSidebarSectionInnerHorizontalInset + workspaceSidebarHeaderRowLeadingPadding)
             .frame(
                 width: sectionWidth,
-                height: isCompact ? workspaceSidebarWorkspaceSectionHeightCompact : workspaceSidebarWorkspaceSectionHeightExpanded,
+                height: isCompact ? compactMetrics.headerHeight : workspaceSidebarWorkspaceSectionHeightExpanded,
                 alignment: isCompact ? .center : .leading,
             )
             .background {
