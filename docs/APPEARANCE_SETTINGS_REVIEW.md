@@ -216,3 +216,33 @@ próprio sistema durante Exposé/Mission Control, sem depender de um refresh do
 layout. A detecção existente da janela WindowManager nível 19 permanece como
 proteção adicional. Não foi adicionado polling. A validação com Mission Control
 aberto no build atualizado ainda precisa ser realizada após instalação.
+
+### Palette and accessibility follow-up
+
+Solid color now shows Custom, Blue, Purple, Pink, Red, Orange, Yellow, Green and
+Graphite, in the order of the supplied System Settings reference. Preset values
+are sRGB samples from that image, rather than AppKit semantic systemBlue/systemRed
+colors, which are a different palette. Older named colors remain valid in config.
+Solid sidebar text chooses black or white by relative luminance, including custom
+colors, and Increased Contrast removes secondary text opacity.
+
+Show background controls both the compact Liquid Glass surface and its expanded
+surface over other windows. Non-always-expanded overlays add a native blur backing
+when background is enabled. Reduce Transparency has priority over both toggle
+states: it replaces all glass/blur/clear layers with opaque windowBackgroundColor.
+SwiftUI's accessibility environment follows system preference changes without
+polling. Automated checks cover background precedence and foreground contrast;
+changing the actual macOS accessibility preference with the installed app remains
+an outstanding manual check.
+
+### Expanded sidebar follow-up
+
+Expanded Liquid Glass always uses the earlier frosted surface (native blur plus
+wallpaper-aware veil), including Always expanded and Show background disabled.
+Show background now controls the compact rail only; Reduce Transparency still
+forces an opaque surface in both states. Solid keeps its selected opaque color.
+Expanded sidebar size offers Small (200 pt), Medium (240 pt, existing default),
+and Large (280 pt), applying immediately through the existing width setting.
+Existing custom widths remain selected until the user chooses a preset.
+Validation: all 723 tests passed for the frosted surface change, including the
+expanded/background/accessibility combinations.

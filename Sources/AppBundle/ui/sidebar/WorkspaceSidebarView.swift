@@ -11,8 +11,11 @@ struct WorkspaceSidebarView: View {
     var usesTransparentContrast: Bool {
         snapshot.configuration.usesWallpaperContrast(visibleWidth: snapshot.visibleWidth, reduceTransparency: reduceTransparency || previewAccessibility.reduceTransparency)
     }
+    var solidColorScheme: ColorScheme {
+        workspaceSidebarSolidColorScheme(snapshot.configuration.resolvedSolidChromeColor)
+    }
     var sidebarColors: WorkspaceSidebarPalette {
-        WorkspaceSidebarPalette(appearance: snapshot.configuration.appearance, increasedContrast: sidebarContrast == .increased || previewAccessibility.increasedContrast, transparentContrast: usesTransparentContrast, colorScheme: colorScheme)
+        WorkspaceSidebarPalette(appearance: snapshot.configuration.appearance, increasedContrast: sidebarContrast == .increased || previewAccessibility.increasedContrast, transparentContrast: usesTransparentContrast, colorScheme: snapshot.configuration.appearance == .custom ? solidColorScheme : colorScheme)
     }
     let snapshot: WorkspaceSidebarSnapshot
     let actions: WorkspaceSidebarActions
@@ -66,7 +69,7 @@ struct WorkspaceSidebarView: View {
         .environment(\.workspaceSidebarAppearance, snapshot.configuration.appearance)
         .environment(\.workspaceSidebarTransparentContrast, usesTransparentContrast)
         .shadow(color: usesTransparentContrast ? (colorScheme == .dark ? Color.black : Color.white).opacity(0.85) : .clear, radius: 1, x: 0, y: 1)
-        .modifier(WorkspaceSidebarColorScheme(appearance: snapshot.configuration.appearance))
+        .modifier(WorkspaceSidebarColorScheme(appearance: snapshot.configuration.appearance, solidColorScheme: solidColorScheme))
         .onChange(of: snapshot.visibleWidth) { visibleWidth in
             if visibleWidth <= collapsedWidth + 0.5 {
                 resetTransientSidebarState()
@@ -614,7 +617,10 @@ extension WorkspaceSidebarView {
         // second, lighter panel behind the content. Keep the material flat and use only the
         // trailing separator to define its boundary.
         if snapshot.configuration.appearance == .system {
-            WorkspaceSidebarSystemSurface(menuBarBackground: snapshot.configuration.menuBarBackground)
+            WorkspaceSidebarSystemSurface(
+                expanded: snapshot.configuration.alwaysExpanded || snapshot.visibleWidth > snapshot.configuration.collapsedWidth + 8,
+                menuBarBackground: snapshot.configuration.menuBarBackground
+            )
                 .clipShape(shape)
         } else {
             GlassSurface(

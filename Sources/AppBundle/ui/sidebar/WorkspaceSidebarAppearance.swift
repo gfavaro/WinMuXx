@@ -66,39 +66,58 @@ struct WorkspaceSidebarPalette {
     var colorScheme: ColorScheme = .dark
 
     var foreground: Color {
-        if appearance == .custom { return .white }
+        if appearance == .custom { return colorScheme == .light ? .black : .white }
         if transparentContrast { return colorScheme == .light ? .black : .white }
         return .primary
     }
     var separator: Color {
         appearance == .system
             ? Color(nsColor: .separatorColor).opacity(increasedContrast ? 1 : 0.7)
-            : .white.opacity(GlassToken.separatorOpacity)
+            : foreground.opacity(GlassToken.separatorOpacity)
     }
 
     func text(opacity: Double) -> Color {
         guard opacity > 0 else { return .clear }
-        if appearance == .custom { return .white.opacity(opacity) }
+        if appearance == .custom { return foreground.opacity(increasedContrast ? 1 : opacity) }
         if transparentContrast { return foreground.opacity(increasedContrast ? 1 : max(opacity, 0.85)) }
         return opacity < 0.8 && !increasedContrast ? .secondary : .primary
     }
 }
 
+enum WorkspaceSidebarSystemBackground {
+    case opaque, transparent, glass, frosted
+
+    static func resolve(showBackground: Bool, reduceTransparency: Bool, expanded: Bool = false) -> Self {
+        if reduceTransparency { return .opaque }
+        if expanded { return .frosted }
+        return showBackground ? .glass : .transparent
+    }
+}
+
 struct WorkspaceSidebarSystemSurface: View {
+    var expanded = false
     var menuBarBackground = true
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) var reduceTransparency
     @Environment(\.workspaceSidebarPreviewAccessibility) var previewAccessibility
 
     var body: some View {
-        if reduceTransparency || previewAccessibility.reduceTransparency {
+        switch WorkspaceSidebarSystemBackground.resolve(
+            showBackground: menuBarBackground,
+            reduceTransparency: reduceTransparency || previewAccessibility.reduceTransparency,
+            expanded: expanded
+        ) {
+        case .opaque:
             Color(nsColor: .windowBackgroundColor)
-        } else if !menuBarBackground {
+        case .transparent:
             Color.clear
-        } else if #available(macOS 26, *) {
-            WorkspaceSidebarNativeGlass()
-        } else {
-            WorkspaceSidebarVisualEffect(background: .menuBar)
+        case .frosted:
+            WorkspaceSidebarFrostedSurface()
+        case .glass:
+            if #available(macOS 26, *) {
+                WorkspaceSidebarNativeGlass()
+            } else {
+                WorkspaceSidebarVisualEffect(background: .menuBar)
+            }
         }
     }
 }
@@ -211,9 +230,21 @@ extension WorkspaceSidebarFrostedTint {
 
 struct WorkspaceSidebarColorScheme: ViewModifier {
     let appearance: WorkspaceSidebarAppearance
+    var solidColorScheme: ColorScheme = .dark
     @Environment(\.colorScheme) var systemColorScheme
 
     func body(content: Content) -> some View {
-        content.environment(\.colorScheme, appearance == .custom ? .dark : systemColorScheme)
+        content.environment(\.colorScheme, appearance == .custom ? solidColorScheme : systemColorScheme)
     }
+}
+
+/// Chooses the higher-contrast foreground for an opaque sidebar color.
+func workspaceSidebarSolidColorScheme(_ color: Color) -> ColorScheme {
+    guard let rgb = NSColor(color).usingColorSpace(.sRGB) else { return .dark }
+    func linear(_ component: CGFloat) -> Double {
+        let value = Double(component)
+        return value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+    }
+    let luminance = 0.2126 * linear(rgb.redComponent) + 0.7152 * linear(rgb.greenComponent) + 0.0722 * linear(rgb.blueComponent)
+    return luminance > 0.179 ? .light : .dark
 }

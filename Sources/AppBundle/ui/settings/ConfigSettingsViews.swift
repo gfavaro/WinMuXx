@@ -177,7 +177,7 @@ struct ShortcutAppearanceSettingsView: View {
                     )
                 } else {
                     SettingsToggle("Show background", isOn: $menuBarBackground,
-                                   help: "Show native glass inspired by the menu bar. Turn off to show the wallpaper. Reduce Transparency takes priority.") {
+                                   help: "Show native glass when collapsed. The expanded sidebar always uses a frosted background. Reduce Transparency takes priority.") {
                         sidebarBool("menu-bar-background", menuBarBackground)
                     }
                     .disabled(!sidebarEnabled)
@@ -190,7 +190,15 @@ struct ShortcutAppearanceSettingsView: View {
                     Text("Always expanded").tag(SettingsSidebarDisplayMode.expanded)
                 } onChange: { persistSidebarDisplayMode() }
                 .disabled(!sidebarEnabled)
-                SettingsStepper("Expanded width", value: $sidebarWidth, range: max(120, collapsedWidth + 1)...max(480, collapsedWidth + 1), help: "Width of the fully expanded sidebar.") { sidebarInt("width", sidebarWidth) }
+                SettingsPicker("Expanded sidebar size", selection: $sidebarWidth,
+                               help: "Width of the expanded sidebar: Small 200 pt, Medium 240 pt, Large 280 pt.") {
+                    Text("Small").tag(200).disabled(collapsedWidth >= 200)
+                    Text("Medium").tag(240).disabled(collapsedWidth >= 240)
+                    Text("Large").tag(280).disabled(collapsedWidth >= 280)
+                    if ![200, 240, 280].contains(sidebarWidth) {
+                        Text("Custom (\(sidebarWidth) pt)").tag(sidebarWidth)
+                    }
+                } onChange: { sidebarInt("width", sidebarWidth) }
                 .disabled(!sidebarEnabled)
                 SettingsPicker("Collapsed sidebar size", selection: $collapsedWidth,
                                help: "Width of the collapsed rail: Small 36 pt, Medium 44 pt, Large 56 pt. Auto-hide uses this size when revealing the rail.") {

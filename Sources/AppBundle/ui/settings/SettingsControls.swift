@@ -339,10 +339,14 @@ struct SettingsSolidColorPalette: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             SettingsColorPresetPicker("Preset", selection: $selection,
-                                      options: [.custom] + ChromeSolidColor.allCases.filter { $0 != .custom },
+                                      options: ChromeSolidColor.settingsPresets,
                                       title: { $0.title },
                                       colors: { [$0 == .custom ? Color(chromeHex: customColor) : $0.color] },
                                       colorWheelOption: .custom)
+            if !ChromeSolidColor.settingsPresets.contains(selection) {
+                Text("Current color: \(selection.title). Choose a preset or Custom to replace it.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             if selection == .custom {
                 ColorPicker("Custom color", selection: Binding(
                     get: { Color(chromeHex: customColor) },

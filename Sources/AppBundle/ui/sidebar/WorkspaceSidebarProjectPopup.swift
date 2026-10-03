@@ -43,7 +43,7 @@ struct WorkspaceSidebarProjectPopup: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(.regularMaterial)
-                    .modifier(WorkspaceSidebarColorScheme(appearance: sidebarColors.appearance))
+                    .modifier(WorkspaceSidebarColorScheme(appearance: sidebarColors.appearance, solidColorScheme: sidebarColors.colorScheme))
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(sidebarColors.foreground.opacity(0.06))
                 RoundedRectangle(cornerRadius: 10, style: .continuous)

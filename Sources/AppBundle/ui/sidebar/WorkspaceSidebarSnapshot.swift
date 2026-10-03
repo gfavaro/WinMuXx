@@ -40,6 +40,7 @@ struct WorkspaceSidebarConfiguration: Equatable {
     var showsStatusPills: Bool
     var appearance: WorkspaceSidebarAppearance = .system
     var background: WorkspaceSidebarBackground = .sidebar
+    var alwaysExpanded = false
     var menuBarBackground = true
     var frostedTint: WorkspaceSidebarFrostedTint = .automatic
     var chromeStyle: ChromeStyle

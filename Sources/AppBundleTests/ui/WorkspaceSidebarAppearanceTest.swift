@@ -6,6 +6,28 @@ import XCTest
 
 @MainActor
 final class WorkspaceSidebarAppearanceTest: XCTestCase {
+    func testReduceTransparencyOverridesBothBackgroundToggleStates() {
+        for enabled in [false, true] {
+            XCTAssertEqual(WorkspaceSidebarSystemBackground.resolve(showBackground: enabled, reduceTransparency: true), .opaque)
+        }
+        XCTAssertEqual(WorkspaceSidebarSystemBackground.resolve(showBackground: false, reduceTransparency: false), .transparent)
+        XCTAssertEqual(WorkspaceSidebarSystemBackground.resolve(showBackground: true, reduceTransparency: false), .glass)
+    }
+
+    func testExpandedSidebarAlwaysUsesFrostedBackgroundUnlessTransparencyIsReduced() {
+        for showBackground in [false, true] {
+            XCTAssertEqual(WorkspaceSidebarSystemBackground.resolve(showBackground: showBackground, reduceTransparency: false, expanded: true), .frosted)
+            XCTAssertEqual(WorkspaceSidebarSystemBackground.resolve(showBackground: showBackground, reduceTransparency: true, expanded: true), .opaque)
+        }
+    }
+
+    func testSolidForegroundContrastForPresetsAndCustomColors() {
+        XCTAssertEqual(workspaceSidebarSolidColorScheme(.white), .light)
+        XCTAssertEqual(workspaceSidebarSolidColorScheme(.black), .dark)
+        XCTAssertEqual(workspaceSidebarSolidColorScheme(ChromeSolidColor.yellow.color), .light)
+        XCTAssertEqual(workspaceSidebarSolidColorScheme(ChromeSolidColor.midnight.color), .dark)
+    }
+
     func testMenuBarBackgroundParsesAndPreservesLegacyDefault() {
         let (legacy, errors) = parseConfig("[workspace-sidebar]\nbackground = 'menu-bar'\n")
         XCTAssertEqual(errors, [])
