@@ -122,7 +122,7 @@ final class MacApp: AbstractApp {
 
     func containsAxWindow(_ windowId: UInt32) async throws -> Bool {
         try await thread?.runInLoop { [axApp] job in
-            axApp.threadGuarded.get(Ax.windowsAttr)?.contains { $0.windowId == windowId } ?? false
+            axApp.threadGuarded.findAxWindow(windowId: windowId) != nil
         } ?? false
     }
 
@@ -234,7 +234,7 @@ final class MacApp: AbstractApp {
 
     func getAxWindowsCount() async throws -> Int? {
         try await thread?.runInLoop { [axApp] job in
-            axApp.threadGuarded.get(Ax.windowsAttr)?.count
+            axApp.threadGuarded.discoverAxWindows()?.count
         }
     }
 
@@ -424,9 +424,9 @@ final class MacApp: AbstractApp {
                 }
             }
 
-            for (id, window) in axApp.threadGuarded.get(Ax.windowsAttr) ?? [] {
+            for (id, window) in axApp.threadGuarded.discoverAxWindows() ?? [] {
                 try job.checkCancellation()
-                try alive.getOrRegisterAxWindow(windowId: id, window, nsApp, job)
+                try alive.getOrRegisterAxWindow(windowId: id, window.cast, nsApp, job)
             }
 
             windows.threadGuarded = alive
@@ -456,16 +456,22 @@ final class MacApp: AbstractApp {
     }
 
     private func withWindow<T>(_ windowId: UInt32, _ body: @Sendable @escaping (AXUIElement, RunLoopJob) throws -> T?) async throws -> T? {
-        try await thread?.runInLoop { [windows] job in
-            guard let window = windows.threadGuarded[windowId] else { return nil }
+        try await thread?.runInLoop { [windows, axApp, nsApp] job in
+            guard let window = try windows.threadGuarded.getOrRegisterAxWindow(
+                windowId: windowId, from: axApp.threadGuarded, nsApp, job) else { return nil }
             return try body(window.ax, job)
         }
     }
 
     private func withWindowAsync(_ windowId: UInt32, _ body: @Sendable @escaping (AXUIElement, RunLoopJob) throws -> ()) -> RunLoopJob {
-        thread?.runInLoopAsync { [windows] job in
-            guard let window = windows.threadGuarded[windowId] else { return }
-            try? body(window.ax, job)
+        thread?.runInLoopAsync { [windows, axApp, nsApp] job in
+            do {
+                guard let window = try windows.threadGuarded.getOrRegisterAxWindow(
+                    windowId: windowId, from: axApp.threadGuarded, nsApp, job) else { return }
+                try body(window.ax, job)
+            } catch {
+                // Closed windows, cancelled jobs and failed AX requests are retried by refresh.
+            }
         } ?? .cancelled
     }
 }
