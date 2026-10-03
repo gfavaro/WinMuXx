@@ -3,6 +3,17 @@ import Foundation
 
 @MainActor
 func persistSettingsConfig(section: String?, key: String, renderedValue: String, model: ShortcutSettingsModel, onSaved: (() -> Void)? = nil) {
+    persistSettingsConfigEdits([SettingsConfigEdit(section: section, key: key, renderedValue: renderedValue)], model: model, onSaved: onSaved)
+}
+
+struct SettingsConfigEdit {
+    let section: String?
+    let key: String
+    let renderedValue: String
+}
+
+@MainActor
+func persistSettingsConfigEdits(_ edits: [SettingsConfigEdit], model: ShortcutSettingsModel, onSaved: (() -> Void)? = nil) {
     let settingTitle = model.activeSettingTitle
     model.activeSettingTitle = nil
     let previousSave = model.pendingSettingsSave
@@ -13,7 +24,7 @@ func persistSettingsConfig(section: String?, key: String, renderedValue: String,
         do {
             let url = preferredEditableConfigUrl()
             let current = (try? String(contentsOf: url, encoding: .utf8)) ?? starterConfigText()
-            let updated = updateSettingsScalarConfig(in: current, section: section, key: key, renderedValue: renderedValue)
+            let updated = applyingSettingsConfigEdits(edits, to: current)
             let parsed = parseConfig(updated)
             guard parsed.errors.isEmpty else {
                 throw NSError(domain: "WinMux", code: 1, userInfo: [NSLocalizedDescriptionKey: parsed.errors.map(\.description).joined(separator: "\n")])
@@ -21,7 +32,7 @@ func persistSettingsConfig(section: String?, key: String, renderedValue: String,
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             try updated.write(to: url, atomically: true, encoding: .utf8)
             guard try await reloadConfig(forceConfigUrl: url) else { throw NSError(domain: "WinMux", code: 1, userInfo: [NSLocalizedDescriptionKey: "Saved the setting, but could not reload the config."]) }
-            model.reload()
+            if model !== ShortcutSettingsModel.shared { model.reload() }
             onSaved?()
         } catch {
             model.errorMessage = error.localizedDescription
@@ -74,4 +85,25 @@ func tomlCommaSeparatedStringArray(_ text: String) -> String {
     tomlStringArray(text.split(whereSeparator: { $0 == "," || $0.isNewline })
         .map { $0.trimmingCharacters(in: .whitespaces) }
         .filter { !$0.isEmpty }.joined(separator: "\n"))
+}
+
+func applyingSettingsConfigEdits(_ edits: [SettingsConfigEdit], to text: String) -> String {
+    edits.reduce(text) { result, edit in
+        updateSettingsScalarConfig(in: result, section: edit.section, key: edit.key, renderedValue: edit.renderedValue)
+    }
+}
+
+func settingsGapValue(_ value: DynamicConfigValue<Int>, replacingDefaultWith defaultValue: Int) -> String {
+    guard case .perMonitor(let overrides, _) = value else { return String(defaultValue) }
+    let items = overrides.map { override in
+        let monitor: String = switch override.description {
+            case .main: "main"
+            case .secondary: "secondary"
+            case .sequenceNumber(let number): String(number)
+            case .pattern(let pattern, _): pattern
+        }
+        let key = monitor.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+        return "{ monitor.\"\(key)\" = \(override.value) }"
+    } + [String(defaultValue)]
+    return "[\(items.joined(separator: ", "))]"
 }

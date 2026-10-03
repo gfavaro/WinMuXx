@@ -265,6 +265,66 @@ struct SettingsPicker<Selection: Hashable, Content: View>: View {
     }
 }
 
+/// Circular swatches mirror System Settings while retaining every configured preset.
+private struct SettingsColorPresetPicker<Option: Hashable & Identifiable>: View {
+    let label: String
+    @Binding var selection: Option
+    let options: [Option]
+    let title: (Option) -> String
+    let colors: (Option) -> [Color]
+    let colorWheelOption: Option?
+
+    init(_ label: String, selection: Binding<Option>, options: [Option],
+         title: @escaping (Option) -> String, colors: @escaping (Option) -> [Color],
+         colorWheelOption: Option? = nil) {
+        self.label = label
+        _selection = selection
+        self.options = options
+        self.title = title
+        self.colors = colors
+        self.colorWheelOption = colorWheelOption
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(label)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 32, maximum: 40), spacing: 10)], spacing: 10) {
+                ForEach(options) { option in
+                    Button { selection = option } label: {
+                        Group {
+                            if option == colorWheelOption {
+                                AngularGradient(colors: [.red, .yellow, .green, .cyan, .blue, .purple, .red],
+                                                center: .center)
+                            } else {
+                                LinearGradient(colors: colors(option), startPoint: .topLeading, endPoint: .bottomTrailing)
+                            }
+                        }
+                            .frame(width: 28, height: 28)
+                            .clipShape(Circle())
+                            .overlay { Circle().strokeBorder(.primary.opacity(0.15), lineWidth: 1) }
+                            .padding(4)
+                            .overlay {
+                                if selection == option {
+                                    Circle().strokeBorder(.primary.opacity(0.6), lineWidth: 2)
+                                }
+                            }
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(title(option))
+                    .accessibilityLabel(title(option))
+                    .accessibilityAddTraits(selection == option ? .isSelected : [])
+                }
+            }
+            Text(title(selection))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .accessibilityLabel("Selected color: \(title(selection))")
+        }
+    }
+}
+
 struct SettingsSidebarFrostedPalette: View {
     @Binding var selection: WorkspaceSidebarFrostedTint
     let isEnabled: Bool
@@ -276,33 +336,19 @@ struct SettingsSidebarFrostedPalette: View {
             Text("Expanded frosted tint")
             Text("Automatic samples the wallpaper behind this monitor's sidebar. Other colors override the expanded glass tint. The compact rail keeps wallpaper-adaptive contrast.")
                 .font(.caption).foregroundStyle(.secondary)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-                ForEach(WorkspaceSidebarFrostedTint.allCases) { tint in
-                    Button { selection = tint } label: {
-                        VStack(spacing: 4) {
-                            LinearGradient(colors: tint.colors(colorScheme: colorScheme), startPoint: .topLeading, endPoint: .bottomTrailing)
-                                .frame(height: 38)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 8).strokeBorder(.secondary.opacity(0.3), lineWidth: 1)
-                                    if selection == tint {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundStyle(.white, .black.opacity(0.75))
-                                    }
-                                }
-                            Text(tint.title).font(.caption).foregroundStyle(.primary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(tint.title)
-                    .accessibilityAddTraits(selection == tint ? .isSelected : [])
-                }
-            }
+            SettingsColorPresetPicker("Tint", selection: $selection,
+                                      options: WorkspaceSidebarFrostedTint.allCases,
+                                      title: { $0.title },
+                                      colors: { $0.colors(colorScheme: colorScheme) })
         }
         .padding(14)
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1 : 0.45)
-        .onChange(of: selection) { _ in onSelectionChange() }
+        .modifier(SettingsFieldFeedback(title: "Expanded frosted tint"))
+        .onChange(of: selection) { _ in
+            ShortcutSettingsModel.shared.activeSettingTitle = "Expanded frosted tint"
+            onSelectionChange()
+        }
     }
 }
 
@@ -312,7 +358,6 @@ struct SettingsSolidColorPalette: View {
     let isEnabled: Bool
     let onSelectionChange: () -> Void
     let onCustomColorChange: () -> Void
-    private let columns = Array(repeating: GridItem(.flexible(minimum: 40), spacing: 8), count: 6)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -320,35 +365,11 @@ struct SettingsSolidColorPalette: View {
             Text("Choose an opaque chrome color.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(ChromeSolidColor.allCases) { color in
-                    Button {
-                        selection = color
-                    } label: {
-                        GlassSurface(
-                            shape: RoundedRectangle(cornerRadius: 8, style: .continuous),
-                            hasBorder: false,
-                            style: .solid,
-                            solidColor: color == .custom ? Color(chromeHex: customColor) : color.color,
-                        )
-                            .frame(height: 42)
-                            .overlay {
-                                if selection == color {
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .strokeBorder(Color.white.opacity(0.9), lineWidth: 2)
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundStyle(.white)
-                                        .shadow(color: .black.opacity(0.4), radius: 2)
-                                }
-                            }
-                    }
-                    .buttonStyle(.plain)
-                    .help(color.title)
-                    .accessibilityLabel(color.title)
-                    .accessibilityAddTraits(selection == color ? .isSelected : [])
-                }
-            }
+            SettingsColorPresetPicker("Preset", selection: $selection,
+                                      options: [.custom] + ChromeSolidColor.allCases.filter { $0 != .custom },
+                                      title: { $0.title },
+                                      colors: { [$0 == .custom ? Color(chromeHex: customColor) : $0.color] },
+                                      colorWheelOption: .custom)
             if selection == .custom {
                 ColorPicker("Custom color", selection: Binding(
                     get: { Color(chromeHex: customColor) },
@@ -362,9 +383,14 @@ struct SettingsSolidColorPalette: View {
         .overlay(alignment: .bottom) {
             Divider().padding(.leading, 14)
         }
-        .onChange(of: selection) { _ in onSelectionChange() }
+        .modifier(SettingsFieldFeedback(title: "Solid color"))
+        .onChange(of: selection) { _ in
+            ShortcutSettingsModel.shared.activeSettingTitle = "Solid color"
+            onSelectionChange()
+        }
         .onChange(of: customColor) { _ in
             guard selection == .custom else { return }
+            ShortcutSettingsModel.shared.activeSettingTitle = "Solid color"
             onCustomColorChange()
         }
     }

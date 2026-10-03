@@ -168,7 +168,12 @@ func shortcutSettingsWindow() -> NSWindow? {
 @MainActor
 func presentShortcutSettingsWindow(_ window: NSWindow) {
     window.styleMask.insert(.resizable)
-    window.minSize = NSSize(width: 820, height: 560)
+    window.contentMinSize = NSSize(width: settingsWindowWidth, height: settingsWindowMinimumHeight)
+    window.contentMaxSize = NSSize(width: settingsWindowWidth, height: .greatestFiniteMagnitude)
+    if abs(window.contentLayoutRect.width - settingsWindowWidth) > 1 {
+        window.setContentSize(NSSize(width: settingsWindowWidth,
+                                    height: max(settingsWindowMinimumHeight, window.contentLayoutRect.height)))
+    }
     NSApp.activate(ignoringOtherApps: true)
     window.center()
     window.makeKeyAndOrderFront(nil)

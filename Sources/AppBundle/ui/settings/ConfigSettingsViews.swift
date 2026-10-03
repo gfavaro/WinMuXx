@@ -123,8 +123,7 @@ struct ShortcutAppearanceSettingsView: View {
     @ObservedObject var model: ShortcutSettingsModel
     @State private var sidebarEnabled = config.workspaceSidebar.enabled
     @State private var sidebarFocusEnabled = config.workspaceSidebar.enableFocus
-    @State private var sidebarAutoHide = config.workspaceSidebar.autoHide
-    @State private var sidebarAlwaysExpanded = config.workspaceSidebar.alwaysExpanded
+    @State private var sidebarDisplayMode = SettingsSidebarDisplayMode(config.workspaceSidebar)
     @State private var showStatusPills = config.workspaceSidebar.showStatusPills
     @State private var showClock = config.workspaceSidebar.showClock
     @State private var showSeconds = config.workspaceSidebar.showSeconds
@@ -139,8 +138,7 @@ struct ShortcutAppearanceSettingsView: View {
     @State private var sidebarWidth = config.workspaceSidebar.width
     @State private var collapsedWidth = config.workspaceSidebar.collapsedWidth
     @State private var tabEnabled = config.windowTabs.enabled
-    @State private var tabHeight = config.windowTabs.height
-    @State private var tabPadding = config.tabGroupPadding
+    @State private var tabHeight = max(36, config.windowTabs.height)
     @State private var menuBarReserveHeight = config.workspaceSidebar.menuBarReserveHeight
     @State private var innerHorizontalGap = settingsConstantValue(config.gaps.inner.horizontal)
     @State private var innerVerticalGap = settingsConstantValue(config.gaps.inner.vertical)
@@ -162,52 +160,57 @@ struct ShortcutAppearanceSettingsView: View {
                     Text(error).foregroundStyle(.red).textSelection(.enabled)
                 }
             }
-            SettingsSection("Appearance") {
+            SettingsSection("Window surfaces") {
                 Text("Style for tabs and the switcher. To use this style on the sidebar, select Custom below.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                SettingsPicker("Style", selection: $chromeStyle, help: "Style for tab groups, the switcher, and the sidebar when its appearance is Custom. Settings keep their own appearance.") {
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                SettingsPicker("Surface style", selection: $chromeStyle, help: "Style for tab groups, the switcher, and the sidebar when its appearance is Custom. Settings keep their own appearance.") {
                     Text("Liquid Glass").tag(ChromeStyle.liquidGlass)
                     Text("Solid color").tag(ChromeStyle.solid)
                 } onChange: { persist("workspace-sidebar", "chrome-style", "'\(chromeStyle.rawValue)'") }
-                SettingsSolidColorPalette(
-                    selection: $solidChromeColor,
-                    customColor: $solidChromeCustomColor,
-                    isEnabled: chromeStyle == .solid,
-                    onSelectionChange: { persist("workspace-sidebar", "solid-chrome-color", "'\(solidChromeColor.rawValue)'") },
-                    onCustomColorChange: { persist("workspace-sidebar", "solid-chrome-custom-color", "'\(solidChromeCustomColor)'") },
-                )
+                if chromeStyle == .solid {
+                    SettingsSolidColorPalette(
+                        selection: $solidChromeColor,
+                        customColor: $solidChromeCustomColor,
+                        isEnabled: chromeStyle == .solid,
+                        onSelectionChange: { persist("workspace-sidebar", "solid-chrome-color", "'\(solidChromeColor.rawValue)'") },
+                        onCustomColorChange: { persist("workspace-sidebar", "solid-chrome-custom-color", "'\(solidChromeCustomColor)'") },
+                    )
+                }
             }
             SettingsSection("Sidebar") {
                 SettingsToggle("Show sidebar", isOn: $sidebarEnabled, help: "Show the workspace rail on configured displays.") { sidebarBool("enabled", sidebarEnabled) }
-                Text("System follows macOS. Custom uses the appearance selected above.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
                 SettingsPicker("Sidebar appearance", selection: $sidebarAppearance, help: "System follows macOS with a native translucent surface. Custom keeps the configured Chrome style and dark controls.") {
                     Text("System").tag(WorkspaceSidebarAppearance.system)
                     Text("Custom").tag(WorkspaceSidebarAppearance.custom)
                 } onChange: { persist("workspace-sidebar", "appearance", "'\(sidebarAppearance.rawValue)'") }
                 .disabled(!sidebarEnabled)
-                SettingsPicker("Sidebar background", selection: $sidebarBackground, help: "System appearance only. Transparent adapts the compact rail's contrast to the local wallpaper file and adds translucent frosted glass when expanded. Menu bar style uses a native translucent approximation. Reduce Transparency overrides both with an opaque background.") {
-                    Text("Sidebar material").tag(WorkspaceSidebarBackground.sidebar)
-                    Text("Menu bar style").tag(WorkspaceSidebarBackground.menuBar)
-                    Text("Transparent").tag(WorkspaceSidebarBackground.transparent)
-                } onChange: { persist("workspace-sidebar", "background", "'\(sidebarBackground.rawValue)'") }
-                .disabled(!sidebarEnabled || sidebarAppearance != .system)
-                SettingsSidebarFrostedPalette(selection: $sidebarFrostedTint,
-                    isEnabled: sidebarEnabled && sidebarAppearance == .system && sidebarBackground == .transparent,
-                    onSelectionChange: { persist("workspace-sidebar", "frosted-tint", "'\(sidebarFrostedTint.rawValue)'") })
-                SettingsToggle("Focus sidebar monitor only", isOn: $sidebarFocusEnabled, help: "Show the sidebar only on the focused monitor when monitor scope allows it.") { sidebarBool("enable-focus", sidebarFocusEnabled) }
+                if sidebarAppearance == .system {
+                    SettingsPicker("Sidebar background", selection: $sidebarBackground, help: "System appearance only. Transparent adapts the compact rail's contrast to the local wallpaper file and adds translucent frosted glass when expanded. Menu bar style uses a native translucent approximation. Reduce Transparency overrides both with an opaque background.") {
+                        Text("Sidebar material").tag(WorkspaceSidebarBackground.sidebar)
+                        Text("Menu bar style").tag(WorkspaceSidebarBackground.menuBar)
+                        Text("Transparent").tag(WorkspaceSidebarBackground.transparent)
+                    } onChange: { persist("workspace-sidebar", "background", "'\(sidebarBackground.rawValue)'") }
+                    .disabled(!sidebarEnabled || sidebarAppearance != .system)
+                    if sidebarBackground == .transparent {
+                        SettingsSidebarFrostedPalette(selection: $sidebarFrostedTint,
+                            isEnabled: sidebarEnabled && sidebarAppearance == .system && sidebarBackground == .transparent,
+                            onSelectionChange: { persist("workspace-sidebar", "frosted-tint", "'\(sidebarFrostedTint.rawValue)'") })
+                    }
+                }
+                SettingsToggle("Show focused-display filter", isOn: $sidebarFocusEnabled, help: "Add Focused to the sidebar's monitor selector. This filters the listed workspaces; it does not hide sidebars on other displays.") { sidebarBool("enable-focus", sidebarFocusEnabled) }
                 .disabled(!sidebarEnabled)
-                SettingsToggle("Reveal sidebar at the display edge", isOn: $sidebarAutoHide, help: "Hide the compact rail until the pointer reaches the left edge.") { sidebarBool("auto-hide", sidebarAutoHide) }
+                SettingsPicker("Sidebar display", selection: $sidebarDisplayMode, help: "Choose a compact rail, reveal at the display edge, or keep the sidebar expanded with reserved window space.") {
+                    Text("Compact rail").tag(SettingsSidebarDisplayMode.compact)
+                    Text("Auto-hide").tag(SettingsSidebarDisplayMode.autoHide)
+                    Text("Always expanded").tag(SettingsSidebarDisplayMode.expanded)
+                } onChange: { persistSidebarDisplayMode() }
                 .disabled(!sidebarEnabled)
-                SettingsToggle("Keep sidebar expanded", isOn: $sidebarAlwaysExpanded, help: "Reserve the full sidebar width for tiled windows.") { sidebarBool("always-expanded", sidebarAlwaysExpanded) }
+                SettingsStepper("Expanded width", value: $sidebarWidth, range: max(120, collapsedWidth + 1)...max(480, collapsedWidth + 1), help: "Width of the fully expanded sidebar.") { sidebarInt("width", sidebarWidth) }
                 .disabled(!sidebarEnabled)
-                SettingsStepper("Expanded width", value: $sidebarWidth, range: 120...480, help: "Width of the fully expanded sidebar.") { sidebarInt("width", sidebarWidth) }
-                .disabled(!sidebarEnabled)
-                SettingsStepper("Collapsed width", value: $collapsedWidth, range: 28...120, help: "Width of the compact sidebar rail.") { sidebarInt("collapsed-width", collapsedWidth) }
-                .disabled(!sidebarEnabled)
-                SettingsStepper("Menu bar reserve", value: $menuBarReserveHeight, range: 0...72, help: "Use 0 px when the macOS menu bar auto-hides.") { sidebarInt("menu-bar-reserve-height", menuBarReserveHeight) }
+                SettingsStepper("Collapsed width", value: $collapsedWidth, range: 28...max(28, min(120, sidebarWidth - 1)), help: "Width of the compact sidebar rail.") { sidebarInt("collapsed-width", collapsedWidth) }
+                .disabled(!sidebarEnabled || sidebarDisplayMode == .expanded)
+                SettingsStepper("Top clearance", value: $menuBarReserveHeight, range: 0...72, help: "Space above the sidebar in points. Use 0 to extend it to the top edge, for example with an automatically hidden menu bar.") { sidebarInt("menu-bar-reserve-height", menuBarReserveHeight) }
                 .disabled(!sidebarEnabled)
 
             }
@@ -228,18 +231,21 @@ struct ShortcutAppearanceSettingsView: View {
             SettingsSection("Window tabs") {
                 if !tabEnabled { Text("Enable Show tab strips to change their dimensions.").font(.caption).foregroundStyle(.secondary) }
                 SettingsToggle("Show tab strips", isOn: $tabEnabled, help: "Display browser-like tabs for stacked windows.") { persist("window-tabs", "enabled", tabEnabled ? "true" : "false") }
-                SettingsStepper("Tab strip height", value: $tabHeight, range: 21...80, help: "Height of the window tab strip.") { persist("window-tabs", "height", "\(tabHeight)") }
+                SettingsStepper("Tab strip height", value: $tabHeight, range: 36...80, help: "Height of the window tab strip.") { persist("window-tabs", "height", "\(tabHeight)") }
                 .disabled(!tabEnabled)
-                SettingsStepper("Tab group padding", value: $tabPadding, range: 0...80, help: "Space around tab groups.") { persist(nil, "tab-group-padding", "\(tabPadding)") }
-                .disabled(!tabEnabled)
+
             }
-            SettingsSection("Tiling gaps") {
-                SettingsStepper("Inner horizontal", value: $innerHorizontalGap, range: 0...80, help: "Space between windows side by side.") { persist("gaps", "inner.horizontal", "\(innerHorizontalGap)") }
-                SettingsStepper("Inner vertical", value: $innerVerticalGap, range: 0...80, help: "Space between vertically stacked windows.") { persist("gaps", "inner.vertical", "\(innerVerticalGap)") }
-                SettingsStepper("Outer left", value: $outerLeftGap, range: 0...120, help: "Inset at the left display edge.") { persist("gaps", "outer.left", "\(outerLeftGap)") }
-                SettingsStepper("Outer right", value: $outerRightGap, range: 0...120, help: "Inset at the right display edge.") { persist("gaps", "outer.right", "\(outerRightGap)") }
-                SettingsStepper("Outer top", value: $outerTopGap, range: 0...120, help: "Inset at the top display edge.") { persist("gaps", "outer.top", "\(outerTopGap)") }
-                SettingsStepper("Outer bottom", value: $outerBottomGap, range: 0...120, help: "Inset at the bottom display edge.") { persist("gaps", "outer.bottom", "\(outerBottomGap)") }
+            SettingsSection("Window spacing") {
+                if hasPerMonitorGaps {
+                    Text("These values edit the default spacing. Per-display overrides in your config are preserved.")
+                    .font(.caption).foregroundStyle(.secondary)
+                }
+                SettingsStepper("Inner horizontal", value: $innerHorizontalGap, range: 0...80, help: "Space between windows side by side.") { persist("gaps", "inner.horizontal", settingsGapValue(config.gaps.inner.horizontal, replacingDefaultWith: innerHorizontalGap)) }
+                SettingsStepper("Inner vertical", value: $innerVerticalGap, range: 0...80, help: "Space between vertically stacked windows.") { persist("gaps", "inner.vertical", settingsGapValue(config.gaps.inner.vertical, replacingDefaultWith: innerVerticalGap)) }
+                SettingsStepper("Outer left", value: $outerLeftGap, range: 0...120, help: "Space between the sidebar and tiled windows, or the left display edge when the sidebar is hidden.") { persist("gaps", "outer.left", settingsGapValue(config.gaps.outer.left, replacingDefaultWith: outerLeftGap)) }
+                SettingsStepper("Outer right", value: $outerRightGap, range: 0...120, help: "Inset at the right display edge.") { persist("gaps", "outer.right", settingsGapValue(config.gaps.outer.right, replacingDefaultWith: outerRightGap)) }
+                SettingsStepper("Outer top", value: $outerTopGap, range: 0...120, help: "Inset at the top display edge.") { persist("gaps", "outer.top", settingsGapValue(config.gaps.outer.top, replacingDefaultWith: outerTopGap)) }
+                SettingsStepper("Outer bottom", value: $outerBottomGap, range: 0...120, help: "Inset at the bottom display edge.") { persist("gaps", "outer.bottom", settingsGapValue(config.gaps.outer.bottom, replacingDefaultWith: outerBottomGap)) }
             }
             SettingsSection("Window borders") {
                 SettingsToggle("Show window borders", isOn: $bordersEnabled, help: "Draw a border around each visible managed window.") {
@@ -258,25 +264,40 @@ struct ShortcutAppearanceSettingsView: View {
                 }
                 .disabled(!bordersEnabled)
                 SettingsPicker("Border placement", selection: $borderOrder, help: "Draw the border behind or over the window.") {
-                    Text("Behind window").tag(WindowBorderOrder.below)
-                    Text("Over window").tag(WindowBorderOrder.above)
+                    Text("Behind").tag(WindowBorderOrder.below)
+                    Text("In front").tag(WindowBorderOrder.above)
                 } onChange: {
                     persist("borders", "order", "'\(borderOrder.rawValue)'")
                 }
                 .disabled(!bordersEnabled)
-                SettingsTextField("Excluded app bundle IDs", text: $excludedBorderApps, help: "Comma-separated bundle IDs, for example com.apple.finder.") {
-                    persist("borders", "exclude-apps", tomlCommaSeparatedStringArray(excludedBorderApps))
+                DisclosureGroup("App exclusions") {
+                    SettingsTextField("Excluded app bundle IDs", text: $excludedBorderApps, help: "Comma-separated bundle IDs, for example com.apple.finder.") {
+                        persist("borders", "exclude-apps", tomlCommaSeparatedStringArray(excludedBorderApps))
+                    }
                 }
             }
         }
         .navigationTitle("Sidebar & Appearance")
-        .id(model.settingsRevision)
+    }
+
+    private var hasPerMonitorGaps: Bool {
+        [config.gaps.inner.horizontal, config.gaps.inner.vertical, config.gaps.outer.left,
+        config.gaps.outer.right, config.gaps.outer.top, config.gaps.outer.bottom].contains {
+            if case .perMonitor = $0 { return true }
+            return false
+        }
+    }
+
+    private func persistSidebarDisplayMode() {
+        persistSettingsConfigEdits(sidebarDisplayMode.edits, model: model)
     }
 
     private func sidebarBool(_ key: String, _ value: Bool) { persist("workspace-sidebar", key, value ? "true" : "false") }
     private func sidebarInt(_ key: String, _ value: Int) { persist("workspace-sidebar", key, "\(value)") }
     private func persist(_ section: String?, _ key: String, _ value: String) { persistSettingsConfig(section: section, key: key, renderedValue: value, model: model) }
 }
+
+
 
 struct ShortcutAutomationSettingsView: View {
     @ObservedObject var model: ShortcutSettingsModel
@@ -341,5 +362,18 @@ private func settingsConstantValue(_ value: DynamicConfigValue<Int>) -> Int {
     switch value {
         case .constant(let value): value
         case .perMonitor(_, let `default`): `default`
+    }
+}
+
+enum SettingsSidebarDisplayMode: Hashable {
+    case compact, autoHide, expanded
+
+    init(_ config: WorkspaceSidebarConfig) {
+        self = config.alwaysExpanded ? .expanded : config.autoHide ? .autoHide : .compact
+    }
+
+    var edits: [SettingsConfigEdit] {
+        [SettingsConfigEdit(section: "workspace-sidebar", key: "always-expanded", renderedValue: self == .expanded ? "true" : "false"),
+         SettingsConfigEdit(section: "workspace-sidebar", key: "auto-hide", renderedValue: self == .autoHide ? "true" : "false")]
     }
 }

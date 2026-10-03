@@ -3,18 +3,24 @@ import Common
 import MASShortcut
 import SwiftUI
 
+// Measured from System Settings on macOS 27: fixed width, vertically resizable.
+let settingsWindowWidth: CGFloat = 757
+let settingsWindowMinimumHeight: CGFloat = 470
+
 public let shortcutSettingsWindowId = "\(winMuxAppName).shortcutSettings"
 
 @MainActor
 public func getShortcutSettingsWindow(model: ShortcutSettingsModel) -> some Scene {
     SwiftUI.Window("WinMuxX Settings", id: shortcutSettingsWindowId) {
         ShortcutSettingsView(model: model)
-            .frame(minWidth: 820, minHeight: 560)
+            .frame(minWidth: settingsWindowWidth, maxWidth: settingsWindowWidth,
+                   minHeight: settingsWindowMinimumHeight, maxHeight: .infinity)
             .onAppear {
                 NSApp.setActivationPolicy(.accessory)
             }
     }
-    .defaultSize(width: 980, height: 700)
+    .defaultSize(width: settingsWindowWidth, height: 700)
+    .windowResizability(.contentSize)
 }
 
 @MainActor
@@ -87,7 +93,7 @@ struct ShortcutSettingsView: View {
                 }
             }
             .listStyle(.sidebar)
-            .navigationSplitViewColumnWidth(min: 220, ideal: 250)
+            .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 220)
         } detail: {
             Group {
                 switch selectedItem {
@@ -101,6 +107,7 @@ struct ShortcutSettingsView: View {
                         ShortcutBehaviorSettingsView(model: model)
                     case .appearance:
                         ShortcutAppearanceSettingsView(model: model)
+                            .id(model.settingsRevision)
                     case .automation:
                         ShortcutAutomationSettingsView(model: model)
                     case .configuration:
