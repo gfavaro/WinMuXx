@@ -48,12 +48,14 @@ struct SettingsStepper: View {
     @Binding var value: Int
     let range: ClosedRange<Int>
     let help: String
+    let unit: String
     let save: () -> Void
-    init(_ title: String, value: Binding<Int>, range: ClosedRange<Int>, help: String, save: @escaping () -> Void) {
+    init(_ title: String, value: Binding<Int>, range: ClosedRange<Int>, help: String, unit: String = "pt", save: @escaping () -> Void) {
         self.title = title
         _value = value
         self.range = range
         self.help = help
+        self.unit = unit
         self.save = save
     }
     var body: some View {
@@ -63,7 +65,7 @@ struct SettingsStepper: View {
                 Spacer()
                 TextField(title, value: $value, format: .number)
                     .labelsHidden().multilineTextAlignment(.trailing).frame(width: 70)
-                Text("pt").foregroundStyle(.secondary)
+                Text(unit).foregroundStyle(.secondary)
             }
         }
         .help(help)

@@ -83,7 +83,7 @@ Applied changes:
 - Extracted project actions together with their private deletion confirmation.
 - Reused monitor-scope resolution instead of duplicating its sentinel checks.
 
-### Functional findings deferred from the behavior-preserving refactor
+### Functional findings and follow-up fixes
 
 1. `GlobalObserver.scheduleFocusFollowsMouse` checks the config and mouse state but
    not `TrayMenuModel.shared.isEnabled`, both before scheduling and after the delay.
@@ -91,9 +91,15 @@ Applied changes:
    disabling WinMux can therefore leave pointer-driven focus active. A separate fix
    should gate both stages and cover disabling while a dwell is pending. This is a
    code-path finding; it has not been reproduced interactively.
+   **Fixed in follow-up:** scheduling and execution both require WinMux to be
+   enabled. Disabling cancels the pending task and clears its candidate immediately,
+   so re-enabling cannot resume a previous dwell. A regression test exercises the
+   disable command and checks candidate cancellation across re-enable.
 2. The Hover delay control uses `SettingsStepper`, whose unit is hard-coded to
    `pt`, although the scheduler interprets the value as milliseconds. A separate
    presentation fix should make the unit configurable and use `ms` for this field.
+   **Fixed in follow-up:** the integer stepper accepts a unit with `pt` as its
+   default; Hover delay explicitly uses `ms`.
 3. Compilation reports existing unused unstructured throwing-task warnings in
    global observers, focus callbacks and legacy Settings code. Those paths were
    not changed here. Deciding how failures should be surfaced needs a separate

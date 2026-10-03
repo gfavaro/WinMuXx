@@ -94,15 +94,20 @@ enum GlobalObserver {
     }
 
     @MainActor
+    static func cancelFocusFollowsMouse() {
+        FocusFollowsMouseController.shared.cancel()
+        focusFollowsMouseTask?.cancel()
+        focusFollowsMouseTask = nil
+    }
+
+    @MainActor
     private static func scheduleFocusFollowsMouse(point: CGPoint, timestamp: TimeInterval) {
-        guard config.focusFollowsMouse, !isLeftMouseButtonDown,
+        guard TrayMenuModel.shared.isEnabled, config.focusFollowsMouse, !isLeftMouseButtonDown,
               !isMouseManipulationActive,
               let window = point.findIn(tree: focus.workspace.rootTilingContainer, virtual: false),
               window.participatesInWorkspaceFocus,
               window != focus.windowOrNil else {
-            FocusFollowsMouseController.shared.cancel()
-            focusFollowsMouseTask?.cancel()
-            focusFollowsMouseTask = nil
+            cancelFocusFollowsMouse()
             return
         }
         _ = FocusFollowsMouseController.shared.notePointer(windowId: window.windowId, point: point, timestamp: timestamp)
@@ -110,7 +115,7 @@ enum GlobalObserver {
         let dwell = max(config.focusFollowsMouseDwell, 0)
         focusFollowsMouseTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(dwell))
-            guard !Task.isCancelled, config.focusFollowsMouse,
+            guard !Task.isCancelled, TrayMenuModel.shared.isEnabled, config.focusFollowsMouse,
                   !isMouseManipulationActive,
                   !isLeftMouseButtonDown,
                   let target = Window.get(byId: window.windowId), target.nodeWorkspace == focus.workspace,

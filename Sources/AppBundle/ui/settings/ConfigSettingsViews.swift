@@ -60,7 +60,7 @@ struct ShortcutBehaviorSettingsView: View {
                 SettingsToggle("Focus windows under the pointer", isOn: $focusFollowsMouse, help: "Focus the tiled window after the pointer rests over it.") {
                     persistRootBool("focus-follows-mouse", focusFollowsMouse)
                 }
-                SettingsStepper("Hover delay", value: $focusFollowsMouseDwell, range: 0...2000, help: "Time the pointer must remain still before focusing the window.") {
+                SettingsStepper("Hover delay", value: $focusFollowsMouseDwell, range: 0...2000, help: "Time the pointer must remain still before focusing the window.", unit: "ms") {
                     persistRootInt("focus-follows-mouse-dwell", focusFollowsMouseDwell)
                 }
                 .disabled(!focusFollowsMouse)
