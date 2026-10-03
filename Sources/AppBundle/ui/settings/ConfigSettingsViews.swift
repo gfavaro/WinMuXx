@@ -266,6 +266,7 @@ struct ShortcutAppearanceSettingsView: View {
 
 struct ShortcutAutomationSettingsView: View {
     @ObservedObject var model: ShortcutSettingsModel
+    @State private var startupCommands = ""
     @State private var workspaceCommands = ""
     @State private var focusCommands = ""
     @State private var monitorCommands = ""
@@ -284,6 +285,16 @@ struct ShortcutAutomationSettingsView: View {
                 SettingsMultilineField("On focused monitor change", text: $monitorCommands, help: "One command per line. Commands run after the active display changes.", savedValue: config.onFocusedMonitorChanged.map { $0.args.description }.joined(separator: "\n")) { onSaved in saveCommands("on-focused-monitor-changed", monitorCommands, onSaved: onSaved) }
                 SettingsMultilineField("On mode change", text: $modeCommands, help: "One command per line. Commands run after a mode changes.", savedValue: config.onModeChanged.map { $0.args.description }.joined(separator: "\n")) { onSaved in saveCommands("on-mode-changed", modeCommands, onSaved: onSaved) }
             }
+            SettingsSection("Startup") {
+                SettingsMultilineField(
+                    "After startup",
+                    text: $startupCommands,
+                    help: "One command per line. Commands run after WinMuxX finishes starting.",
+                    savedValue: config.afterStartupCommand.map { $0.args.description }.joined(separator: "\n")
+                ) { onSaved in
+                    saveCommands("after-startup-command", startupCommands, onSaved: onSaved)
+                }
+            }
         }
         .navigationTitle("Automation")
         .task { loadCommands() }
@@ -291,11 +302,13 @@ struct ShortcutAutomationSettingsView: View {
         .onChange(of: monitorCommands) { model.automationDrafts["on-focused-monitor-changed"] = $0 }
         .onChange(of: focusCommands) { model.automationDrafts["on-focus-changed"] = $0 }
         .onChange(of: workspaceCommands) { model.automationDrafts["exec-on-workspace-change"] = $0 }
+        .onChange(of: startupCommands) { model.automationDrafts["after-startup-command"] = $0 }
         .id(model.settingsRevision)
     }
 
     private func loadCommands() {
         workspaceCommands = model.automationDrafts["exec-on-workspace-change"] ?? config.execOnWorkspaceChange.joined(separator: "\n")
+        startupCommands = model.automationDrafts["after-startup-command"] ?? config.afterStartupCommand.map { $0.args.description }.joined(separator: "\n")
         focusCommands = model.automationDrafts["on-focus-changed"] ?? config.onFocusChanged.map { $0.args.description }.joined(separator: "\n")
         monitorCommands = model.automationDrafts["on-focused-monitor-changed"] ?? config.onFocusedMonitorChanged.map { $0.args.description }.joined(separator: "\n")
         modeCommands = model.automationDrafts["on-mode-changed"] ?? config.onModeChanged.map { $0.args.description }.joined(separator: "\n")
