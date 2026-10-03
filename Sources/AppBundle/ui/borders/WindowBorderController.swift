@@ -28,6 +28,10 @@ final class WindowBorderController {
         }
         // WindowServer provides actual positions, including floating windows, without AX requests.
         let nativeWindows = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] ?? []
+        guard !missionControlVisibilityFromWindowServer(nativeWindows) else {
+            clear()
+            return
+        }
         var frames: [UInt32: CGRect] = [:]
         for entry in nativeWindows {
             guard let id = entry[kCGWindowNumber as String] as? NSNumber,
@@ -54,9 +58,38 @@ final class WindowBorderController {
         }
     }
 
+    private func missionControlVisibilityFromWindowServer(_ windows: [[String: Any]]) -> Bool {
+        isMissionControlVisible(
+            windows,
+            screenSizes: NSScreen.screens.map { $0.frame.size },
+            bundleIdentifierForPID: { pid in
+                NSRunningApplication(processIdentifier: pid)?.bundleIdentifier
+            },
+        )
+    }
+
     private func clear() {
         for panel in panels.values { panel.close() }
         panels.removeAll()
+    }
+}
+
+/// Mission Control is represented by WindowManager as a display-sized level-19 window on
+/// recent macOS versions. Treating it as an overlay keeps managed borders out of Exposé.
+func isMissionControlVisible(
+    _ windows: [[String: Any]],
+    screenSizes: [CGSize],
+    bundleIdentifierForPID: (pid_t) -> String?,
+) -> Bool {
+    windows.contains { window in
+        guard let ownerPID = (window[kCGWindowOwnerPID as String] as? NSNumber).map({ pid_t($0.int32Value) }),
+              bundleIdentifierForPID(ownerPID) == "com.apple.WindowManager",
+              let layer = (window[kCGWindowLayer as String] as? NSNumber)?.intValue,
+              layer == 19,
+              let bounds = window[kCGWindowBounds as String] as? NSDictionary,
+              let frame = CGRect(dictionaryRepresentation: bounds),
+              frame.width > 0, frame.height > 0 else { return false }
+        return screenSizes.contains { abs($0.width - frame.width) < 2 && abs($0.height - frame.height) < 2 }
     }
 }
 
