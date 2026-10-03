@@ -27,14 +27,21 @@ final class MonitorConfigurationObserver {
     }
 
     private func handleScreenParametersChanged() {
-        refreshMonitorPolicy(refreshReason: NSApplication.didChangeScreenParametersNotification.rawValue)
+        // AppKit can emit this notification while the display topology is still changing.
+        // Refresh panels immediately, but wait for the settled pass before reconciling
+        // workspace-to-monitor assignments. This avoids creating fallback workspaces for a
+        // transient one-display topology during plug/unplug and arrangement changes.
+        refreshMonitorPolicy(
+            refreshReason: NSApplication.didChangeScreenParametersNotification.rawValue,
+            refreshSession: false,
+        )
         scheduleSettledRefresh()
     }
 
-    private func refreshMonitorPolicy(refreshReason: String) {
+    private func refreshMonitorPolicy(refreshReason: String, refreshSession: Bool = true) {
         WorkspaceSidebarPanel.refreshAll()
         WindowTabStripPanelController.shared.refresh()
-        if TrayMenuModel.shared.isEnabled {
+        if refreshSession, TrayMenuModel.shared.isEnabled {
             scheduleRefreshSession(.globalObserver(refreshReason))
         }
     }
