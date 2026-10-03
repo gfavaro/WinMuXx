@@ -64,6 +64,8 @@ private let configParser: [String: any ParserProtocol<Config>] = [
     "automatically-unhide-macos-hidden-apps": Parser(\.automaticallyUnhideMacosHiddenApps, parseBool),
     "automatically-tile-new-windows": Parser(\.automaticallyTileNewWindows, parseBool),
     "enable-shake-to-toggle-tiling": Parser(\.enableShakeToToggleTiling, parseBool),
+    "focus-follows-mouse": Parser(\.focusFollowsMouse, parseBool),
+    "focus-follows-mouse-dwell": Parser(\.focusFollowsMouseDwell, parseInt),
     "shortcuts-preset": Parser(\.shortcutsPreset, parseShortcutsPreset),
     "tab-group-padding": Parser(\.tabGroupPadding, parseInt),
     persistentWorkspacesKey: Parser(\.persistentWorkspaces, parsePersistentWorkspaces),

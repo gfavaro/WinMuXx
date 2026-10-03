@@ -46,6 +46,8 @@ struct Config: ConvenienceCopyable {
     var automaticallyUnhideMacosHiddenApps: Bool = false
     var automaticallyTileNewWindows: Bool = true
     var enableShakeToToggleTiling: Bool = true
+    var focusFollowsMouse: Bool = false
+    var focusFollowsMouseDwell: Int = 250
     var shortcutsPreset: ShortcutsPreset = .none
     var tabGroupPadding: Int = 30
     var enableNormalizationOppositeOrientationForNestedContainers: Bool = true

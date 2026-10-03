@@ -6,6 +6,7 @@ enum GlobalObserver {
     @MainActor private static var isInitialized = false
     @MainActor private static var notificationObserverTokens: [NSObjectProtocol] = []
     @MainActor private static var eventMonitorTokens: [Any] = []
+    @MainActor private static var focusFollowsMouseTask: Task<Void, Never>?
 
     private static func onNotif(_ notification: Notification) {
         // Third line of defence against lock screen window. See: closedWindowsCache
@@ -80,6 +81,7 @@ enum GlobalObserver {
         let point = normalizeAppKitScreenPoint(screenPoint)
         runOnMainActor {
             MousePointerTracker.shared.note(point: point, timestamp: timestamp)
+            scheduleFocusFollowsMouse(point: point, timestamp: timestamp)
             WorkspaceSidebarPanel.trapCursorForVisiblePanelsIfNeeded()
             WorkspaceSidebarPanel.noteHoverPointerActivityForVisiblePanels(timestamp: timestamp)
             if isLeftMouseDownEvent {
@@ -88,6 +90,36 @@ enum GlobalObserver {
                 }
             }
             noteTapBindingKeyDown()
+        }
+    }
+
+    @MainActor
+    private static func scheduleFocusFollowsMouse(point: CGPoint, timestamp: TimeInterval) {
+        guard config.focusFollowsMouse, !isLeftMouseButtonDown,
+              !isMouseManipulationActive,
+              let window = point.findIn(tree: focus.workspace.rootTilingContainer, virtual: false),
+              window.participatesInWorkspaceFocus,
+              window != focus.windowOrNil else {
+            FocusFollowsMouseController.shared.cancel()
+            focusFollowsMouseTask?.cancel()
+            focusFollowsMouseTask = nil
+            return
+        }
+        _ = FocusFollowsMouseController.shared.notePointer(windowId: window.windowId, point: point, timestamp: timestamp)
+        focusFollowsMouseTask?.cancel()
+        let dwell = max(config.focusFollowsMouseDwell, 0)
+        focusFollowsMouseTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(dwell))
+            guard !Task.isCancelled, config.focusFollowsMouse,
+                  !isMouseManipulationActive,
+                  !isLeftMouseButtonDown,
+                  let target = Window.get(byId: window.windowId), target.nodeWorkspace == focus.workspace,
+                  target.participatesInWorkspaceFocus,
+                  let ready = FocusFollowsMouseController.shared.isReady(dwell: Double(dwell) / 1000, timestamp: ProcessInfo.processInfo.systemUptime),
+                  ready == window.windowId else { return }
+            _ = target.focusWindow()
+            target.nativeFocus()
+            FocusFollowsMouseController.shared.markFocused(window.windowId)
         }
     }
 
