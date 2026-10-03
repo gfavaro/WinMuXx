@@ -66,8 +66,10 @@ func overrideWorkspaceInUseFromSidebar(_ workspaceName: String, targetMonitorSco
               let targetMonitorScopeId,
               let targetMonitor = workspaceSidebarMonitor(forScopeId: targetMonitorScopeId)
         else { return }
-        if !activateWorkspaceForUser(workspace, on: targetMonitor) {
+        if !overrideWorkspaceOnMonitorBySwappingActiveViewports(workspace, targetMonitor: targetMonitor) {
             showWorkspaceSidebarError("Monitor assignment prevents activating this workspace")
+        } else {
+            _ = workspace.focusWorkspace()
         }
     }
 }
