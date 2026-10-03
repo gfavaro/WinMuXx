@@ -965,6 +965,12 @@ extension WorkspaceSidebarPanel {
         {
             // Apply auto-hide/collapsed-width changes immediately on config reload.
             viewModel.workspaceSidebarVisibleWidth = layout.collapsedWidth
+        } else if viewModel.isWorkspaceSidebarExpanded,
+                  pendingExpand == nil,
+                  pendingCollapse == nil,
+                  viewModel.workspaceSidebarVisibleWidth != layout.expandedWidth
+        {
+            viewModel.workspaceSidebarVisibleWidth = layout.expandedWidth
         }
         updateMousePassthrough()
         orderFrontRegardless()

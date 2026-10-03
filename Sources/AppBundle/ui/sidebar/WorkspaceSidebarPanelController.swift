@@ -114,6 +114,7 @@ final class WorkspaceSidebarPanel: NSPanelHud {
     }
 
     func syncModelFromShared() {
+        viewModel.setIfChanged(\.workspaceSidebarConfiguration, workspaceSidebarConfiguration())
         // Equality-guarded: this runs several times per refresh session, and each unguarded
         // @Published write would invalidate the whole sidebar SwiftUI tree even when nothing
         // changed. workspaceSidebarVisibleWidth/isWorkspaceSidebarExpanded are panel-local and

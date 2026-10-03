@@ -12,6 +12,7 @@ public final class TrayMenuModel: ObservableObject {
     @Published var isEnabled: Bool = true
     @Published var workspaces: [WorkspaceViewModel] = []
     @Published var workspaceSidebarWorkspaces: [WorkspaceSidebarWorkspaceViewModel] = []
+    @Published var workspaceSidebarConfiguration: WorkspaceSidebarConfiguration = .empty
     @Published var workspaceSidebarProjects: [WorkspaceSidebarProjectViewModel] = []
     @Published var workspaceSidebarActiveProjectId: WorkspaceProjectId = workspaceProjectDefaultId
     @Published var workspaceSidebarMonitorScopes: [WorkspaceSidebarMonitorScopeViewModel] = []

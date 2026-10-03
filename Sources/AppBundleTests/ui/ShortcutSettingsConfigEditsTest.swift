@@ -2,6 +2,22 @@
 import XCTest
 
 final class ShortcutSettingsConfigEditsTest: XCTestCase {
+    func testCommaSeparatedListsIgnoreEmptyItemsAndAcceptNewlines() {
+        XCTAssertEqual(tomlCommaSeparatedStringArray("1, 2,\n 3,, "), "[\"1\", \"2\", \"3\"]")
+        XCTAssertEqual(tomlCommaSeparatedStringArray(""), "[]")
+    }
+
+    func testColorValidationMatchesConfigParser() {
+        for value in ["#E1E3E4", "#E1E3E480", "#abcdef", "abcdef", "#XYZXYZ", "#123", ""] {
+            XCTAssertEqual(settingsHexColorError(value) == nil, normalizedWindowBorderColor(value) != nil, value)
+        }
+    }
+
+    func testCommandArraysPreserveCommasAndEscapeQuotes() {
+        XCTAssertEqual(tomlStringArray("exec-and-forget echo a,b\nworkspace \"two\""),
+            "[\"exec-and-forget echo a,b\", \"workspace \\\"two\\\"\"]")
+    }
+
     func testUpdateModeBindingConfigAddsMissingSection() {
         let updated = updateModeBindingConfig(
             in: """

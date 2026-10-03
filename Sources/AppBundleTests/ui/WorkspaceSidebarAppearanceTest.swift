@@ -1,10 +1,27 @@
 @testable import AppBundle
 import AppKit
+import Combine
 import SwiftUI
 import XCTest
 
 @MainActor
 final class WorkspaceSidebarAppearanceTest: XCTestCase {
+    func testConfigurationChangePublishesWithoutWorkspaceChanges() {
+        let model = TrayMenuModel()
+        var updates = 0
+        let subscription = model.objectWillChange.sink { updates += 1 }
+        var updated = WorkspaceSidebarConfiguration.empty
+        updated.appearance = .custom
+        updated.chromeStyle = .solid
+        model.setIfChanged(\.workspaceSidebarConfiguration, updated)
+        XCTAssertEqual(updates, 1)
+        XCTAssertEqual(workspaceSidebarSnapshot(from: model).configuration, updated)
+        model.setIfChanged(\.workspaceSidebarConfiguration, updated)
+        XCTAssertEqual(updates, 1)
+        XCTAssertTrue(model.workspaceSidebarWorkspaces.isEmpty)
+        withExtendedLifetime(subscription) {}
+    }
+
     func testSystemAppearanceIsDefaultAndDoesNotChangeSharedChrome() {
         let (parsed, errors) = parseConfig("[workspace-sidebar]\nchrome-style = 'solid'\n")
         XCTAssertEqual(errors, [])
