@@ -40,6 +40,7 @@ struct WorkspaceSidebarConfiguration: Equatable {
     var showsStatusPills: Bool
     var appearance: WorkspaceSidebarAppearance = .system
     var background: WorkspaceSidebarBackground = .sidebar
+    var menuBarBackground = true
     var frostedTint: WorkspaceSidebarFrostedTint = .automatic
     var chromeStyle: ChromeStyle
     var solidChromeColor: ChromeSolidColor
@@ -50,8 +51,7 @@ struct WorkspaceSidebarConfiguration: Equatable {
     }
 
     func usesWallpaperContrast(visibleWidth: CGFloat, reduceTransparency: Bool) -> Bool {
-        appearance == .system && background == .transparent &&
-            visibleWidth <= collapsedWidth + 8 && !reduceTransparency
+        appearance == .system && !reduceTransparency
     }
 
     static let empty = WorkspaceSidebarConfiguration(

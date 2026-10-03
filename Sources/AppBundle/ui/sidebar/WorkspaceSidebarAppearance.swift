@@ -85,18 +85,44 @@ struct WorkspaceSidebarPalette {
 }
 
 struct WorkspaceSidebarSystemSurface: View {
-    var background: WorkspaceSidebarBackground = .sidebar
+    var menuBarBackground = true
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) var reduceTransparency
     @Environment(\.workspaceSidebarPreviewAccessibility) var previewAccessibility
 
     var body: some View {
         if reduceTransparency || previewAccessibility.reduceTransparency {
             Color(nsColor: .windowBackgroundColor)
-        } else if background == .transparent {
+        } else if !menuBarBackground {
             Color.clear
+        } else if #available(macOS 26, *) {
+            WorkspaceSidebarNativeGlass()
         } else {
-            WorkspaceSidebarVisualEffect(background: background)
+            WorkspaceSidebarVisualEffect(background: .menuBar)
         }
+    }
+}
+
+@available(macOS 26, *)
+private struct WorkspaceSidebarNativeGlass: NSViewRepresentable {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func makeNSView(context: Context) -> NSGlassEffectView {
+        let view = NSGlassEffectView()
+        configure(view)
+        return view
+    }
+
+    func updateNSView(_ view: NSGlassEffectView, context: Context) {
+        configure(view)
+    }
+
+    private func configure(_ view: NSGlassEffectView) {
+        view.style = .regular
+        // The outer sidebar shape owns rounding: compact stays square.
+        view.cornerRadius = 0
+        view.tintColor = nil
+        view.appearance = NSAppearance(named: colorScheme == .dark ? .darkAqua : .aqua)
     }
 }
 

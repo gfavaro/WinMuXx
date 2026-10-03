@@ -38,7 +38,7 @@ final class WorkspaceSidebarWallpaperContrastTest: XCTestCase {
         XCTAssertEqual(dark.text(opacity: 0), .clear)
     }
 
-    func testExpandedSidebarRestoresBackgroundAndSystemContrast() {
+    func testSystemSidebarAdaptsContrastAtBothWidths() {
         var configuration = WorkspaceSidebarConfiguration.empty
         configuration.collapsedWidth = 50
         configuration.expandedWidth = 280
@@ -49,13 +49,13 @@ final class WorkspaceSidebarWallpaperContrastTest: XCTestCase {
         XCTAssertEqual(configuration.transparentExpansionProgress(visibleWidth: 0), 0)
         XCTAssertEqual(configuration.transparentExpansionProgress(visibleWidth: 165), 0.5)
         XCTAssertTrue(configuration.usesWallpaperContrast(visibleWidth: 50, reduceTransparency: false))
-        XCTAssertFalse(configuration.usesWallpaperContrast(visibleWidth: 280, reduceTransparency: false))
+        XCTAssertTrue(configuration.usesWallpaperContrast(visibleWidth: 280, reduceTransparency: false))
         XCTAssertFalse(configuration.usesWallpaperContrast(visibleWidth: 50, reduceTransparency: true))
         configuration.appearance = .custom
         XCTAssertFalse(configuration.usesWallpaperContrast(visibleWidth: 50, reduceTransparency: false))
         configuration.appearance = .system
         configuration.background = .menuBar
-        XCTAssertFalse(configuration.usesWallpaperContrast(visibleWidth: 50, reduceTransparency: false))
+        XCTAssertTrue(configuration.usesWallpaperContrast(visibleWidth: 50, reduceTransparency: false))
     }
 
     func testAnalyzerRejectsNonFileAndMissingWallpapers() async {

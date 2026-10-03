@@ -36,35 +36,23 @@ public func renderWinMuxSidebarAppearanceProofs(to directory: URL) throws {
     let application = NSApplication.shared
     application.setActivationPolicy(.accessory)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    var variants: [(String, ColorScheme, Bool, Bool, Bool, WorkspaceSidebarAppearance, ChromeStyle, WorkspaceSidebarBackground)] = [
-        ("light-expanded", .light, false, false, false, .system, .liquidGlass, .sidebar),
-        ("dark-expanded", .dark, false, false, false, .system, .liquidGlass, .sidebar),
-        ("light-collapsed", .light, true, false, false, .system, .liquidGlass, .sidebar),
-        ("dark-collapsed", .dark, true, false, false, .system, .liquidGlass, .sidebar),
-        ("reduced-transparency", .light, false, true, false, .system, .liquidGlass, .sidebar),
-        ("increased-contrast", .light, false, false, true, .system, .liquidGlass, .sidebar),
+    let variants: [(String, ColorScheme, Bool, Bool, Bool, WorkspaceSidebarAppearance, ChromeStyle, WorkspaceSidebarBackground)] = [
+        ("light-expanded", .light, false, false, false, .system, .liquidGlass, .menuBar),
+        ("dark-expanded", .dark, false, false, false, .system, .liquidGlass, .menuBar),
+        ("light-collapsed", .light, true, false, false, .system, .liquidGlass, .menuBar),
+        ("dark-collapsed", .dark, true, false, false, .system, .liquidGlass, .menuBar),
+        ("reduced-transparency", .light, false, true, false, .system, .liquidGlass, .menuBar),
+        ("increased-contrast", .light, false, false, true, .system, .liquidGlass, .menuBar),
         ("custom-liquid", .light, false, false, false, .custom, .liquidGlass, .sidebar),
         ("custom-solid", .light, false, false, false, .custom, .solid, .sidebar),
-        ("menu-bar-light", .light, false, false, false, .system, .liquidGlass, .menuBar),
-        ("menu-bar-dark", .dark, false, false, false, .system, .liquidGlass, .menuBar),
-        ("transparent-light", .light, false, false, false, .system, .liquidGlass, .transparent),
-        ("transparent-dark", .dark, false, false, false, .system, .liquidGlass, .transparent),
-        ("transparent-light-collapsed", .light, true, false, false, .system, .liquidGlass, .transparent),
-        ("transparent-dark-collapsed", .dark, true, false, false, .system, .liquidGlass, .transparent),
-        ("transparent-reduced", .light, false, true, false, .system, .liquidGlass, .transparent),
-        ("wallpaper-tint-blue", .dark, false, false, false, .system, .liquidGlass, .transparent),
-        ("wallpaper-tint-pink", .light, false, false, false, .system, .liquidGlass, .transparent),
+        ("no-background-light", .light, false, false, false, .system, .liquidGlass, .transparent),
+        ("no-background-dark", .dark, false, false, false, .system, .liquidGlass, .transparent),
     ]
-    variants += WorkspaceSidebarFrostedTint.allCases.map { tint in
-        ("frosted-\(tint.rawValue)", tint.preferredColorScheme ?? .dark, false, false, false, .system, .liquidGlass, .transparent)
-    }
     for (name, scheme, collapsed, reduceTransparency, contrast, appearance, chrome, background) in variants {
         var snapshot = MarketingFixtures.sidebarSnapshot
         snapshot.configuration.appearance = appearance
         snapshot.configuration.background = background
-        if name.hasPrefix("frosted-"), let tint = WorkspaceSidebarFrostedTint(rawValue: String(name.dropFirst("frosted-".count))) {
-            snapshot.configuration.frostedTint = tint
-        }
+        snapshot.configuration.menuBarBackground = !name.hasPrefix("no-background-")
         snapshot.configuration.chromeStyle = chrome
         snapshot.visibleWidth = collapsed ? snapshot.configuration.collapsedWidth : snapshot.configuration.expandedWidth
         let size = CGSize(width: snapshot.visibleWidth, height: 700)

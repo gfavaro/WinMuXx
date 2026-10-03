@@ -1,6 +1,14 @@
 # Revisão de Sidebar & Appearance — 2026-10-03
 
 Revisão de cada controle, seu consumidor no código, persistência e dependências.
+
+**Estado atual:** há um único menu Sidebar appearance com Liquid Glass e Solid
+color. A antiga escolha System/Custom foi removida; `chrome-style` controla o
+renderizador da sidebar, tabs e switcher. Liquid Glass usa o vidro nativo inspirado
+na menu bar e Show background; Solid exibe a paleta de cores. `appearance` legado
+é aceito, mas não sobrepõe o estilo. Os registros abaixo descrevem a evolução.
+Esta alteração é posterior ao build 21 instalado.
+
 O build 19 está instalado em `/Applications/WinMuxX.app`, assinado com
 `WinMuxX Local Code Signing`, com app e CLI no commit `c0bc117e`. A validação
 interativa e as limitações da sessão estão registradas abaixo.
@@ -52,7 +60,7 @@ Os controles ficam próximos do elemento afetado para preservar o contexto.
 | Custom color | ColorPicker nativo, sem transparência para superfícies opacas. | Manter; aparece quando o preset Custom é selecionado. |
 | Show sidebar | Toggle mestre; cria/oculta os painéis nos displays configurados. | Manter; dependentes ficam indisponíveis quando desligado. |
 | Sidebar appearance | System usa cores/material macOS; Custom usa o estilo das superfícies. | Manter, com alcance explícito. |
-| Sidebar background | Sidebar material, aproximação da menu bar ou Transparent. | Mostrar somente em System. `.sidebar` e `.headerView` são materiais diferentes, embora possam parecer próximos. |
+| Sidebar background | Sidebar material, estilo que acompanha o fundo da menu bar ou Transparent. | Mostrar somente em System. `.sidebar` e `.headerView` são materiais diferentes, embora possam parecer próximos. |
 | Expanded frosted tint | Amostras circulares, somente para a sidebar transparente expandida. | Mostrar somente em System + Transparent. Não é a mesma paleta de cor sólida. |
 | Focus sidebar monitor only | Na realidade adiciona um filtro de workspaces por display focado. | Corrigido para Show focused-display filter. Não move nem oculta painéis. |
 | Reveal sidebar at the display edge | Auto-hide zera a largura em repouso, mantendo ativação pela borda. | Integrado ao menu Sidebar display. |
@@ -178,3 +186,33 @@ limites para evitar controles excessivamente pequenos ou grandes. Os espaçament
 internos respeitam a largura disponível; o layout expandido mantém sua escala.
 Dois testes adicionais verificam a escala dos presets e a ausência de overflow
 horizontal em larguras de 28 a 120 pt.
+
+## Fundo no estilo Menu bar
+
+Show menu bar background aparece em System + Menu bar style. O toggle local
+mostra material translúcido quando ligado e fundo transparente quando desligado,
+usando a chave `workspace-sidebar.menu-bar-background`. O padrão true preserva
+o comportamento das configurações anteriores. Reduce Transparency tem prioridade.
+O contraste acompanha o wallpaper quando o fundo está desligado, inclusive no
+modo expandido. Não há leitura periódica das preferências do macOS.
+
+A preferência global foi investigada e o toggle do sistema restaurado ao estado
+original. Por escolha do usuário, o WinMuxX usa uma opção própria com reload
+imediato. O material é uma aproximação nativa; AppKit não fornece o material
+exato da menu bar. Esta alteração ainda não está instalada no build 19.
+
+## Investigação do efeito real da menu bar
+
+[Comparação de renderizadores e limites da equivalência](MENU_BAR_APPEARANCE_INVESTIGATION.md).
+O toggle do build 20 usa `.headerView` como aproximação e não reproduz fielmente
+o renderizador da menu bar. A referência desejada é System acompanhar a menu bar,
+com aparência própria apenas em Custom.
+
+## Bordas no Mission Control
+
+Os painéis de bordas usavam `.stationary`, comportamento que o AppKit define como
+visível e estacionário durante Exposé. Agora usam `.transient`, ocultado pelo
+próprio sistema durante Exposé/Mission Control, sem depender de um refresh do
+layout. A detecção existente da janela WindowManager nível 19 permanece como
+proteção adicional. Não foi adicionado polling. A validação com Mission Control
+aberto no build atualizado ainda precisa ser realizada após instalação.

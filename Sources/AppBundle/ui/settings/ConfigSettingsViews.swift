@@ -130,9 +130,7 @@ struct ShortcutAppearanceSettingsView: View {
     @State private var showDate = config.workspaceSidebar.showDate
     @State private var showWeekday = config.workspaceSidebar.showWeekday
     @State private var chromeStyle = config.workspaceSidebar.chromeStyle
-    @State private var sidebarAppearance = config.workspaceSidebar.appearance
-    @State private var sidebarBackground = config.workspaceSidebar.background
-    @State private var sidebarFrostedTint = config.workspaceSidebar.frostedTint
+    @State private var menuBarBackground = config.workspaceSidebar.menuBarBackground
     @State private var solidChromeColor = config.workspaceSidebar.solidChromeColor
     @State private var solidChromeCustomColor = config.workspaceSidebar.solidChromeCustomColor
     @State private var sidebarWidth = config.workspaceSidebar.width
@@ -160,43 +158,29 @@ struct ShortcutAppearanceSettingsView: View {
                     Text(error).foregroundStyle(.red).textSelection(.enabled)
                 }
             }
-            SettingsSection("Window surfaces") {
-                Text("Style for tabs and the switcher. To use this style on the sidebar, select Custom below.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                SettingsPicker("Surface style", selection: $chromeStyle, help: "Style for tab groups, the switcher, and the sidebar when its appearance is Custom. Settings keep their own appearance.") {
+            SettingsSection("Sidebar") {
+                SettingsToggle("Show sidebar", isOn: $sidebarEnabled, help: "Show the workspace rail on configured displays.") { sidebarBool("enabled", sidebarEnabled) }
+                SettingsPicker("Sidebar appearance", selection: $chromeStyle,
+                               help: "Liquid Glass uses native glass and wallpaper-adaptive contrast. Solid color uses the selected opaque color. This choice also applies to tab strips and the switcher.") {
                     Text("Liquid Glass").tag(ChromeStyle.liquidGlass)
                     Text("Solid color").tag(ChromeStyle.solid)
                 } onChange: { persist("workspace-sidebar", "chrome-style", "'\(chromeStyle.rawValue)'") }
+                Text("Also applies to tab strips and the switcher.")
+                    .font(.caption).foregroundStyle(.secondary)
                 if chromeStyle == .solid {
                     SettingsSolidColorPalette(
                         selection: $solidChromeColor,
                         customColor: $solidChromeCustomColor,
-                        isEnabled: chromeStyle == .solid,
+                        isEnabled: true,
                         onSelectionChange: { persist("workspace-sidebar", "solid-chrome-color", "'\(solidChromeColor.rawValue)'") },
                         onCustomColorChange: { persist("workspace-sidebar", "solid-chrome-custom-color", "'\(solidChromeCustomColor)'") },
                     )
-                }
-            }
-            SettingsSection("Sidebar") {
-                SettingsToggle("Show sidebar", isOn: $sidebarEnabled, help: "Show the workspace rail on configured displays.") { sidebarBool("enabled", sidebarEnabled) }
-                SettingsPicker("Sidebar appearance", selection: $sidebarAppearance, help: "System follows macOS with a native translucent surface. Custom keeps the configured Chrome style and dark controls.") {
-                    Text("System").tag(WorkspaceSidebarAppearance.system)
-                    Text("Custom").tag(WorkspaceSidebarAppearance.custom)
-                } onChange: { persist("workspace-sidebar", "appearance", "'\(sidebarAppearance.rawValue)'") }
-                .disabled(!sidebarEnabled)
-                if sidebarAppearance == .system {
-                    SettingsPicker("Sidebar background", selection: $sidebarBackground, help: "System appearance only. Transparent adapts the compact rail's contrast to the local wallpaper file and adds translucent frosted glass when expanded. Menu bar style uses a native translucent approximation. Reduce Transparency overrides both with an opaque background.") {
-                        Text("Sidebar material").tag(WorkspaceSidebarBackground.sidebar)
-                        Text("Menu bar style").tag(WorkspaceSidebarBackground.menuBar)
-                        Text("Transparent").tag(WorkspaceSidebarBackground.transparent)
-                    } onChange: { persist("workspace-sidebar", "background", "'\(sidebarBackground.rawValue)'") }
-                    .disabled(!sidebarEnabled || sidebarAppearance != .system)
-                    if sidebarBackground == .transparent {
-                        SettingsSidebarFrostedPalette(selection: $sidebarFrostedTint,
-                            isEnabled: sidebarEnabled && sidebarAppearance == .system && sidebarBackground == .transparent,
-                            onSelectionChange: { persist("workspace-sidebar", "frosted-tint", "'\(sidebarFrostedTint.rawValue)'") })
+                } else {
+                    SettingsToggle("Show background", isOn: $menuBarBackground,
+                                   help: "Show native glass inspired by the menu bar. Turn off to show the wallpaper. Reduce Transparency takes priority.") {
+                        sidebarBool("menu-bar-background", menuBarBackground)
                     }
+                    .disabled(!sidebarEnabled)
                 }
                 SettingsToggle("Show focused-display filter", isOn: $sidebarFocusEnabled, help: "Add Focused to the sidebar's monitor selector. This filters the listed workspaces; it does not hide sidebars on other displays.") { sidebarBool("enable-focus", sidebarFocusEnabled) }
                 .disabled(!sidebarEnabled)

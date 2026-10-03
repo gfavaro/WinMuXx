@@ -154,18 +154,13 @@ struct WorkspaceSidebarWallpaperContrast: ViewModifier {
     }
 
     private var samplingEnabled: Bool {
-        snapshot.configuration.appearance == .system && snapshot.configuration.background == .transparent && !reduceTransparency
+        snapshot.configuration.appearance == .system && !reduceTransparency
     }
 
     private var resolvedColorScheme: ColorScheme {
-        if enabled { return compactSample?.tone.colorScheme ?? systemColorScheme }
-        if snapshot.configuration.appearance == .system, snapshot.configuration.background == .transparent, !reduceTransparency {
-            if snapshot.configuration.frostedTint == .automatic {
-                return expandedSample?.tone.colorScheme ?? systemColorScheme
-            }
-            return snapshot.configuration.frostedTint.preferredColorScheme ?? systemColorScheme
-        }
-        return systemColorScheme
+        guard enabled else { return systemColorScheme }
+        let isCompact = snapshot.visibleWidth <= snapshot.configuration.collapsedWidth + 8
+        return (isCompact ? compactSample : expandedSample)?.tone.colorScheme ?? systemColorScheme
     }
 
     func body(content: Content) -> some View {
@@ -184,7 +179,7 @@ struct WorkspaceSidebarWallpaperContrast: ViewModifier {
                     } else {
                         compactSample = nil
                     }
-                    if snapshot.configuration.frostedTint == .automatic, let request = request(width: snapshot.configuration.expandedWidth) {
+                    if let request = request(width: snapshot.configuration.expandedWidth) {
                         let result = await WorkspaceSidebarWallpaperAnalyzer.shared.profile(for: request)
                         guard !Task.isCancelled else { return }
                         expandedSample = result

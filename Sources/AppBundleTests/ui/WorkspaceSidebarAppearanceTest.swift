@@ -6,6 +6,37 @@ import XCTest
 
 @MainActor
 final class WorkspaceSidebarAppearanceTest: XCTestCase {
+    func testMenuBarBackgroundParsesAndPreservesLegacyDefault() {
+        let (legacy, errors) = parseConfig("[workspace-sidebar]\nbackground = 'menu-bar'\n")
+        XCTAssertEqual(errors, [])
+        XCTAssertTrue(legacy.workspaceSidebar.menuBarBackground)
+        for enabled in [true, false] {
+            let (parsed, errors) = parseConfig("[workspace-sidebar]\nmenu-bar-background = \(enabled)\n")
+            XCTAssertEqual(errors, [])
+            XCTAssertEqual(parsed.workspaceSidebar.menuBarBackground, enabled)
+        }
+        let (_, invalid) = parseConfig("[workspace-sidebar]\nmenu-bar-background = 'yes'\n")
+        XCTAssertFalse(invalid.isEmpty)
+    }
+
+    func testSystemGlassUsesWallpaperContrastWithAndWithoutBackground() {
+        var layout = WorkspaceSidebarConfiguration.empty
+        layout.appearance = .system
+        layout.background = .menuBar
+        layout.collapsedWidth = 44
+        layout.expandedWidth = 240
+        for width in [layout.collapsedWidth, layout.expandedWidth] {
+            layout.menuBarBackground = false
+            XCTAssertTrue(layout.usesWallpaperContrast(visibleWidth: width, reduceTransparency: false))
+            layout.menuBarBackground = true
+            XCTAssertTrue(layout.usesWallpaperContrast(visibleWidth: width, reduceTransparency: false))
+            layout.menuBarBackground = false
+            XCTAssertFalse(layout.usesWallpaperContrast(visibleWidth: width, reduceTransparency: true))
+        }
+        layout.appearance = .custom
+        XCTAssertFalse(layout.usesWallpaperContrast(visibleWidth: 44, reduceTransparency: false))
+    }
+
     func testCompactControlsFitEverySupportedRailWidth() {
         for width in [28, 36, 44, 50, 56, 120] {
             let metrics = WorkspaceSidebarCompactMetrics(width: CGFloat(width))
@@ -85,17 +116,18 @@ final class WorkspaceSidebarAppearanceTest: XCTestCase {
         XCTAssertEqual(parsed.workspaceSidebar.chromeStyle, .solid)
     }
 
-    func testSnapshotReflectsAppearanceChangeWithoutChangingSharedChrome() {
+    func testSnapshotUsesSurfaceStyleAsOnlyAppearanceChoice() {
         let previous = config
         defer { config = previous }
         config.workspaceSidebar.chromeStyle = .solid
         config.workspaceSidebar.appearance = .custom
         let before = workspaceSidebarConfiguration()
         config.workspaceSidebar.appearance = .system
+        XCTAssertEqual(workspaceSidebarConfiguration(), before)
+        config.workspaceSidebar.chromeStyle = .liquidGlass
         let after = workspaceSidebarConfiguration()
-        XCTAssertNotEqual(before, after)
         XCTAssertEqual(after.appearance, .system)
-        XCTAssertEqual(after.chromeStyle, before.chromeStyle)
+        XCTAssertEqual(after.chromeStyle, .liquidGlass)
         XCTAssertEqual(after.collapsedWidth, before.collapsedWidth)
         XCTAssertEqual(after.expandedWidth, before.expandedWidth)
     }

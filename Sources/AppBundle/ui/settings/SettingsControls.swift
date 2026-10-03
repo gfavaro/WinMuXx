@@ -325,33 +325,6 @@ private struct SettingsColorPresetPicker<Option: Hashable & Identifiable>: View 
     }
 }
 
-struct SettingsSidebarFrostedPalette: View {
-    @Binding var selection: WorkspaceSidebarFrostedTint
-    let isEnabled: Bool
-    let onSelectionChange: () -> Void
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Expanded frosted tint")
-            Text("Automatic samples the wallpaper behind this monitor's sidebar. Other colors override the expanded glass tint. The compact rail keeps wallpaper-adaptive contrast.")
-                .font(.caption).foregroundStyle(.secondary)
-            SettingsColorPresetPicker("Tint", selection: $selection,
-                                      options: WorkspaceSidebarFrostedTint.allCases,
-                                      title: { $0.title },
-                                      colors: { $0.colors(colorScheme: colorScheme) })
-        }
-        .padding(14)
-        .disabled(!isEnabled)
-        .opacity(isEnabled ? 1 : 0.45)
-        .modifier(SettingsFieldFeedback(title: "Expanded frosted tint"))
-        .onChange(of: selection) { _ in
-            ShortcutSettingsModel.shared.activeSettingTitle = "Expanded frosted tint"
-            onSelectionChange()
-        }
-    }
-}
-
 struct SettingsSolidColorPalette: View {
     @Binding var selection: ChromeSolidColor
     @Binding var customColor: String

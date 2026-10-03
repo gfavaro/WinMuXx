@@ -614,12 +614,8 @@ extension WorkspaceSidebarView {
         // second, lighter panel behind the content. Keep the material flat and use only the
         // trailing separator to define its boundary.
         if snapshot.configuration.appearance == .system {
-            if snapshot.configuration.background == .transparent && !reduceTransparency && !previewAccessibility.reduceTransparency {
-                let progress = snapshot.configuration.transparentExpansionProgress(visibleWidth: snapshot.visibleWidth)
-                WorkspaceSidebarFrostedSurface(tint: snapshot.configuration.frostedTint).opacity(progress).clipShape(shape)
-            } else {
-                WorkspaceSidebarSystemSurface(background: snapshot.configuration.background).clipShape(shape)
-            }
+            WorkspaceSidebarSystemSurface(menuBarBackground: snapshot.configuration.menuBarBackground)
+                .clipShape(shape)
         } else {
             GlassSurface(
                 shape: shape,
