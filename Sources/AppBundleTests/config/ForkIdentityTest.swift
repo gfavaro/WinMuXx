@@ -9,7 +9,7 @@ final class ForkIdentityTest: XCTestCase {
         XCTAssertTrue(winMuxAppName.hasPrefix("WinMuxX"))
         XCTAssertTrue(socketPath.contains(winMuxAppId))
         XCTAssertFalse(socketPath.contains("com.zimengxiong"))
-        XCTAssertEqual(forkRepositoryURL, "https://github.com/gfavaro/WinMux")
+        XCTAssertEqual(forkRepositoryURL, "https://github.com/gfavaro/WinMuxX")
     }
 
     func testForkConfigurationHasAnIndependentOwnedDirectory() {
