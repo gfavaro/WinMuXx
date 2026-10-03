@@ -22,7 +22,9 @@ private func optimisticallyMarkWorkspaceFocusedInSidebar(_ workspaceName: String
     let workspaces = TrayMenuModel.shared.workspaceSidebarWorkspaces
     guard let workspace = Workspace.existing(byName: workspaceName) else { return }
     let requestedMonitor = targetMonitorScopeId.flatMap(workspaceSidebarMonitor(forScopeId:)) ?? focus.workspace.workspaceMonitor
-    let monitor = workspace.visibleMonitor ?? requestedMonitor
+    if let visibleMonitor = workspace.visibleMonitor,
+       visibleMonitor.rect.topLeftCorner != requestedMonitor.rect.topLeftCorner { return }
+    let monitor = requestedMonitor
     guard isValidAssignment(workspace: workspace, screen: monitor.rect.topLeftCorner) else { return }
     let outgoing = monitor.activeWorkspace
     var visibleNames = Set(monitors.map { $0.activeWorkspace.name })
@@ -55,7 +57,12 @@ func focusWorkspaceFromSidebar(_ workspace: Workspace, targetMonitorScopeId: Str
         guard let monitor = workspaceSidebarMonitor(forScopeId: targetMonitorScopeId) else { return false }
         targetMonitor = monitor
     } else { targetMonitor = focus.workspace.workspaceMonitor }
-    return activateWorkspaceForUser(workspace, on: targetMonitor)
+    if workspace.isVisible {
+        guard workspace.workspaceMonitor.rect.topLeftCorner == targetMonitor.rect.topLeftCorner else { return false }
+        return workspace.focusWorkspace()
+    }
+    guard targetMonitor.setActiveWorkspace(workspace) else { return false }
+    return workspace.focusWorkspace()
 }
 
 @MainActor

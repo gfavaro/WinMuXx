@@ -104,8 +104,8 @@ final class MonitorWorkspaceNavigationTest: XCTestCase {
         XCTAssertEqual(focus.workspace, spaces[3])
     }
 
-    func testSidebarFocusesVisibleWorkspaceWithoutMovingItToClickedDisplay() {
-        XCTAssertTrue(focusWorkspaceFromSidebar(spaces[0], targetMonitorScopeId: workspaceSidebarMonitorScopeId(for: displays[1])))
+    func testSidebarRequiresOverrideForWorkspaceVisibleOnAnotherDisplay() {
+        XCTAssertFalse(focusWorkspaceFromSidebar(spaces[0], targetMonitorScopeId: workspaceSidebarMonitorScopeId(for: displays[1])))
         XCTAssertEqual(displays[0].activeWorkspace, spaces[0])
         XCTAssertEqual(displays[1].activeWorkspace, spaces[1])
         XCTAssertEqual(focus.workspace.workspaceMonitor.rect.topLeftCorner, displays[0].rect.topLeftCorner)
@@ -169,4 +169,13 @@ final class MonitorWorkspaceNavigationTest: XCTestCase {
         try await run("workspace-back-and-forth")
         XCTAssertEqual(displays[0].activeWorkspace, spaces[0])
     }
+    func testSidebarOverrideSwapsOnlyTheSourceAndDestinationDisplays() {
+        XCTAssertTrue(overrideWorkspaceOnMonitorBySwappingActiveViewports(spaces[0], targetMonitor: displays[1]))
+        XCTAssertEqual(displays[0].activeWorkspace, spaces[1])
+        XCTAssertEqual(displays[1].activeWorkspace, spaces[0])
+        XCTAssertEqual(displays[2].activeWorkspace, spaces[4])
+        XCTAssertTrue(focusWorkspaceFromSidebar(spaces[0], targetMonitorScopeId: workspaceSidebarMonitorScopeId(for: displays[1])))
+        XCTAssertEqual(focus.workspace, spaces[0])
+    }
+
 }

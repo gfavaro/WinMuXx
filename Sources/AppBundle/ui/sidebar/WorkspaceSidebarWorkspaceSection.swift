@@ -139,7 +139,7 @@ struct WorkspaceSidebarWorkspaceSection: View {
 extension WorkspaceSidebarWorkspaceSection {
     func handleSectionClick() {
         guard allowsWorkspaceActivation else { return }
-        if !isCompact, isInUseOnOtherDisplay {
+        if isInUseOnOtherDisplay {
             // A workspace already visible elsewhere must require an explicit second action
             // before replacing the destination monitor's active workspace.
             activeInUseOverrideWorkspaceName = workspace.name

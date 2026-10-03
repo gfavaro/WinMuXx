@@ -30,7 +30,7 @@ struct WorkspaceSidebarInUseOverrideOverlay: View {
                     .padding(.horizontal, 12)
 
                 Button(action: onOverride) {
-                    Text("Focus workspace")
+                    Text("Override")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(Color.white)
                         .padding(.horizontal, 14)
