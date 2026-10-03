@@ -603,7 +603,9 @@ extension WorkspaceSidebarView {
 }
 extension WorkspaceSidebarView {
     var sidebarShape: some Shape {
-        WorkspaceSidebarPanelShape(rightCornerRadius: workspaceSidebarPanelRightCornerRadius)
+        let progress = snapshot.configuration.transparentExpansionProgress(visibleWidth: snapshot.visibleWidth)
+        let radius = progress < workspaceSidebarRowsRevealProgress ? 0 : workspaceSidebarPanelRightCornerRadius
+        return WorkspaceSidebarPanelShape(rightCornerRadius: radius)
     }
 
     @ViewBuilder
