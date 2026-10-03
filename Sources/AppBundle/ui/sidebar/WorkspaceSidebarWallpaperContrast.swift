@@ -201,7 +201,7 @@ struct WorkspaceSidebarWallpaperContrast: ViewModifier {
         let screen = screens[index]
         guard let url = NSWorkspace.shared.desktopImageURL(for: screen) else { return nil }
         let options = NSWorkspace.shared.desktopImageOptions(for: screen) ?? [:]
-        let fill = (options[.fillColor] as? NSColor)?.usingColorSpace(.sRGB) ?? .black
+        let fill = workspaceSidebarWallpaperFillColor(options[.fillColor] as? NSColor)
         return WorkspaceSidebarWallpaperRequest(
             url: url, screenWidth: screen.frame.width, screenHeight: screen.frame.height,
             sidebarWidth: width,
@@ -211,4 +211,9 @@ struct WorkspaceSidebarWallpaperContrast: ViewModifier {
             position: snapshot.configuration.position
         )
     }
+}
+
+/// Component access requires an RGB color space; NSColor.black can be grayscale.
+func workspaceSidebarWallpaperFillColor(_ color: NSColor?) -> NSColor {
+    color?.usingColorSpace(.sRGB) ?? NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 1)
 }

@@ -125,6 +125,19 @@ final class WorkspaceSidebarWallpaperContrastTest: XCTestCase {
         XCTAssertNotEqual(blue, pink)
     }
 
+    func testWallpaperFillFallbackAndGrayscaleProvideRGBComponents() {
+        for source in [nil, NSColor.black, NSColor(white: 0, alpha: 1)] {
+            let fill = workspaceSidebarWallpaperFillColor(source)
+            XCTAssertEqual(fill.redComponent, 0, accuracy: 0.01)
+            XCTAssertEqual(fill.greenComponent, 0, accuracy: 0.01)
+            XCTAssertEqual(fill.blueComponent, 0, accuracy: 0.01)
+        }
+        let white = workspaceSidebarWallpaperFillColor(.white)
+        XCTAssertEqual(white.redComponent, 1, accuracy: 0.01)
+        XCTAssertEqual(white.greenComponent, 1, accuracy: 0.01)
+        XCTAssertEqual(white.blueComponent, 1, accuracy: 0.01)
+    }
+
     private func request(url: URL = URL(filePath: "/private/tmp/fixture.png"), scaling: NSImageScaling = .scaleProportionallyUpOrDown, clipping: Bool = true) -> WorkspaceSidebarWallpaperRequest {
         WorkspaceSidebarWallpaperRequest(url: url, screenWidth: 100, screenHeight: 100, sidebarWidth: 10,
             scaling: scaling.rawValue, allowClipping: clipping, fillRed: 0, fillGreen: 0, fillBlue: 0)
